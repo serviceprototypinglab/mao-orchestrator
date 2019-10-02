@@ -2,7 +2,8 @@ import etcd
 import git
 import datetime
 import configparser
-import mao_runner
+import requests
+
 
 
 config = configparser.ConfigParser()
@@ -11,7 +12,6 @@ importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
 etcd_host = config['ETCD']['HOST']
 etcd_port = int(config['ETCD']['PORT'])
 client = etcd.Client(host=etcd_host, port=etcd_port)
-today = str(datetime.datetime.today().year) + "-" + str(datetime.datetime.today().month) + "-" + str(datetime.datetime.today().day)
 
 
 def write(key,value):
@@ -32,7 +32,19 @@ def get(key):
 
 def sync(data):
     # Run tool
-    mao_runner.run_program(data)
+    #mao_runner.run_program(data)
+    # Use new scheduler
+    tool = client.get('tools/{}'.format(data['name'])).value
+    dataset = data['dataset']
+    freq = data['frequency']
+    json = {
+        "container": tool,
+        "tool": data['name'],
+        "dataset": dataset,
+        "freq": freq
+    }
+    requests.post('http://127.0.0.1:5000/run', json=json)
+
 
     # Retrieve name and link to dataset from request
     # Push to dataset using git
