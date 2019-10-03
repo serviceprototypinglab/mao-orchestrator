@@ -55,7 +55,4 @@ This will make the scheduler run the program once a day or week. It will coalesc
 ## Roadmap
 
 - git integration with automated key management for automatically updating datasets
-- notification service for spike detection based on etcd listeners
-- daemonisation and better I/O
-- a CLI client to negate the need for raw HTTP requests
-- scheduler persistence
+- daemonisation and better I/O + a CLI client to negate the need for raw HTTP requests
