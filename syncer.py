@@ -4,6 +4,7 @@ from github import Github
 import datetime
 import configparser
 import requests
+import json
 
 
 config = configparser.ConfigParser()
@@ -34,16 +35,20 @@ def sync(data):
     # Run tool
     #mao_runner.run_program(data)
     # Use new scheduler
-    tool = client.get('tools/{}'.format(data['name'])).value
+    blob = client.get('tools/{}'.format(data['name'])).value
+    payload = json.loads(blob)
+    tool = payload['image']
     dataset = data['dataset']
     freq = data['frequency']
-    json = {
+    json_out = {
         "container": tool,
         "tool": data['name'],
         "dataset": dataset,
+        "cron": data['cron'],
         "freq": freq
     }
-    requests.post('http://127.0.0.1:5000/run', json=json)
+    print(json_out)
+    requests.post('http://127.0.0.1:5000/run', json=json_out)
 
     # Retrieve name and link to dataset from request
     # Push to dataset using git

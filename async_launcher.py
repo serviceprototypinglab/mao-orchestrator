@@ -22,7 +22,15 @@ async def datasets(request):
 @routes.post('/register')
 async def register(request):
     data = await request.json()
-    syncer.write("tools/{}".format(data['name']), data['url'])
+    syncer.write("tools/{}".format(data['name']),
+                    '{{"author":"{}",\
+"image":"{}",\
+"data_repo":"{}",\
+"code_repo":"{}",\
+"artefact":"{}"}}'
+                       .format(data['author'], data['image'],
+                               data['data_repo'], data['code_repo'],
+                               data['artefact']))
     return web.json_response(syncer.get("tools/{}".format(data['name'])))
 
 
@@ -31,18 +39,6 @@ async def register(request):
     data = await request.json()
     syncer.write("data/{}".format(data['name']), data['url'])
     return web.json_response(syncer.get("data/{}".format(data['name'])))
-
-
-@routes.post('/help')
-async def help(request):
-    query = await request.json()
-    with open('local.yml', 'r') as local:
-        data = yaml.load(local)
-    for program in data['Programs']:
-        if program['Name'] == (query['name']):
-            return web.json_response(program['Commands'])
-    else:
-        return web.json_response("No such program")
 
 
 @routes.post('/retrieve')

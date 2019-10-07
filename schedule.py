@@ -22,8 +22,11 @@ scheduler.start()
 def schedule_run():
     data = request.get_json()
     container = data.get('container')
+    print(container)
     tool = data.get('tool')
+    print(tool)
     dataset = data.get('dataset')
+    print(dataset)
     if data.get('cron'):
         freq = data.get('freq')
         if freq == 'daily':
@@ -60,8 +63,8 @@ def listen():
         print ("No notifications")
 
 
-scheduler.add_job(listen, 'interval', seconds=10,
-                        misfire_grace_time=None, coalesce=True)
+#scheduler.add_job(listen, 'interval', seconds=10,
+                    #    misfire_grace_time=None, coalesce=True)
 
 
 if __name__ == '__main__':

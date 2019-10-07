@@ -1,0 +1,10 @@
+
+- clone associated dataset when first running tool
+- remember what was cloned (write in config and check config)
+- use cloned dataset as data dir mounted to container
+
+[
+   {"base": "Ubuntu", "pkgname": "xyz", "pkgversion": "8.3.4"},
+   ...
+]
+-> docker exec -e "COLUMNS=180" dpkg -l | awk '{print $2,$3}'
