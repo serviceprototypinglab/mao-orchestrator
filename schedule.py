@@ -7,7 +7,7 @@ import etcd
 
 
 schedule = Flask(__name__)
-client = docker.from_env()
+docker_client = docker.from_env()
 config = configparser.ConfigParser()
 config.read('config.ini')
 importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
@@ -24,7 +24,7 @@ def schedule_run():
     container = data.get('container')
     tool = data.get('tool')
     dataset = data.get('dataset')
-    if data.get('cron')==True:
+    if data.get('cron'):
         freq = data.get('freq')
         if freq == 'daily':
             job = scheduler.add_job(run_container, 'interval', days=1,
@@ -41,10 +41,10 @@ def schedule_run():
 
 
 def run_container(container, tool, dataset):
-    client.containers.run(container,
-                          volumes={'{}/{}'.format(importdir, tool):
-                                   {'bind': '/usr/src/app/data'}})
+    docker_client.containers.run(container,
+                                 volumes={'{}/{}'.format(importdir, tool): {'bind': '/usr/src/app/data'}})
     differ.detect('{}/{}'.format(importdir, tool), dataset)
+
 
 def listen():
     try:

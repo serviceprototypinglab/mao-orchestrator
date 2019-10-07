@@ -1,9 +1,9 @@
 import etcd
 import git
+from github import Github
 import datetime
 import configparser
 import requests
-
 
 
 config = configparser.ConfigParser()
@@ -44,7 +44,6 @@ def sync(data):
         "freq": freq
     }
     requests.post('http://127.0.0.1:5000/run', json=json)
-
 
     # Retrieve name and link to dataset from request
     # Push to dataset using git
