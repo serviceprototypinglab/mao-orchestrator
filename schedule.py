@@ -45,8 +45,8 @@ def schedule_run():
 
 def run_container(container, tool, dataset):
     docker_client.containers.run(container,
-                                 volumes={'{}/{}'.format(importdir, tool): {'bind': '/usr/src/app/data'}})
-    differ.detect('{}/{}'.format(importdir, tool), dataset)
+                                 volumes={dataset: {'bind': '/usr/src/app/data'}})
+    differ.detect(dataset, tool)
 
 
 def listen():
@@ -60,11 +60,11 @@ def listen():
         # Delete notifications
     except etcd.EtcdKeyNotFound:
 
-        print ("No notifications")
+        print("No notifications")
 
 
-#scheduler.add_job(listen, 'interval', seconds=10,
-                    #    misfire_grace_time=None, coalesce=True)
+scheduler.add_job(listen, 'interval', seconds=10,
+                  misfire_grace_time=None, coalesce=True)
 
 
 if __name__ == '__main__':

@@ -32,13 +32,25 @@ def get(key):
 
 
 def sync(data):
-    # Run tool
-    #mao_runner.run_program(data)
     # Use new scheduler
     blob = client.get('tools/{}'.format(data['name'])).value
     payload = json.loads(blob)
     tool = payload['image']
-    dataset = data['dataset']
+    print("Tool invoked: " + tool)
+    dataset = importdir + "/" + data['name']
+    print("Data directory: " + dataset)
+    # Check if dataset has been cloned already
+    if data['name'] not in config['DATA_REPOS']:
+        # Clone dataset
+        print("Cloning dataset from: " + payload['data_repo'] + " to: " + dataset)
+        try:
+            git.Repo.clone_from(payload['data_repo'], dataset)
+            print("Updating config")
+            config.set('DATA_REPOS', data['name'], dataset)
+            with open('config.ini', 'w') as f:
+                config.write(f)
+        except:
+            print("Error cloning data")
     freq = data['frequency']
     json_out = {
         "container": tool,
@@ -47,17 +59,9 @@ def sync(data):
         "cron": data['cron'],
         "freq": freq
     }
-    print(json_out)
+    print("Message to scheduler: " + json.dumps(json_out))
     requests.post('http://127.0.0.1:5000/run', json=json_out)
-
-    # Retrieve name and link to dataset from request
-    # Push to dataset using git
-    try:
-        datalink = client.get(('/data/{}'.format(data['dataset']))).value
-        print("This dataset is associated with this request:", datalink)
-    except:
-        print("Associated dataset not registered")
-        return
+    return
 
 
 def retrieve(name):
