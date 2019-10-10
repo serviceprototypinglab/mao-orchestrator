@@ -42,17 +42,12 @@ Inside this directory to build the dummy tool. **Keep the name of the generated 
 ## Running experiments
 - Request a run:
 ```
-curl -d '{"name":"dummy", "dataset":"none", "cron":false}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/run
+curl -d '{"name":"dummy", "cron":false}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/run
 ```
 This will make the tool run immediately.
 
 - Schedule a run:
 ```
-curl -d '{"name":"dummy", "dataset":"none", "cron":true, "frequency":"<daily/weekly>"}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/run
+curl -d '{"name":"dummy", "cron":true, "frequency":"<daily/weekly>"}' -H "Content-Type: application/json" -X POST http://0.0.0.0:8080/run
 ```
 This will make the scheduler run the program once a day or week. It will coalesce and retry failed jobs but at this stage has NO persistence.
-
-## Roadmap
-
-- git integration with automated key management for automatically updating datasets
-- daemonisation and better I/O + a CLI client to negate the need for raw HTTP requests

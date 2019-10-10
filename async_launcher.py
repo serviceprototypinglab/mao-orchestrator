@@ -44,16 +44,16 @@ async def register(request):
 @routes.post('/retrieve')
 async def retrieve(request):
     data = await request.json()
-    syncer.retrieve(data['name'])
-    return web.json_response("Done")
+    response = syncer.retrieve(data['name'])
+    return web.json_response(response)
 
 
 @routes.post("/run")
 async def run(request):
     data = await request.json()
     print(data)
-    syncer.sync(data)
-    return web.json_response("Done")
+    response = syncer.sync(data)
+    return web.json_response(response)
 
 
 app.add_routes(routes)

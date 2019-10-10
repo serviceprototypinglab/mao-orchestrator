@@ -1,4 +1,3 @@
-from flask import Flask, request
 from apscheduler.schedulers.background import BackgroundScheduler
 import differ
 import docker
@@ -6,7 +5,6 @@ import configparser
 import etcd
 
 
-schedule = Flask(__name__)
 docker_client = docker.from_env()
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -18,17 +16,20 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 
 
-@schedule.route('/run', methods=['POST'])
-def schedule_run():
-    data = request.get_json()
-    container = data.get('container')
+def schedule_run(data):
+    #data = request.get_json()
+    response = {}
+    container = data['container']
+    response['container'] = container
     print(container)
-    tool = data.get('tool')
+    tool = data['tool']
+    response['tool'] = tool
     print(tool)
-    dataset = data.get('dataset')
+    dataset = data['dataset']
+    response['dataset'] = dataset
     print(dataset)
-    if data.get('cron'):
-        freq = data.get('freq')
+    if data['cron']:
+        freq = data['freq']
         if freq == 'daily':
             job = scheduler.add_job(run_container, 'interval', days=1,
                                     args=[container, tool, dataset],
@@ -37,16 +38,19 @@ def schedule_run():
             job = scheduler.add_job(run_container, 'interval', weeks=1,
                                     args=[container, tool, dataset],
                                     misfire_grace_time=None, coalesce=True)
-        return "job details: %s" % job
+        response['job'] = job.id
+        return response
     else:
-        run_container(container, tool, dataset)
-        return "ran"
+        response['exec_result'] = run_container(container, tool, dataset)
+        return response
 
 
 def run_container(container, tool, dataset):
+    result = {}
     docker_client.containers.run(container,
                                  volumes={dataset: {'bind': '/usr/src/app/data'}})
-    differ.detect(dataset, tool)
+    result = differ.detect(dataset, tool)
+    return result
 
 
 def listen():
@@ -65,7 +69,3 @@ def listen():
 
 scheduler.add_job(listen, 'interval', seconds=10,
                   misfire_grace_time=None, coalesce=True)
-
-
-if __name__ == '__main__':
-    schedule.run()
