@@ -1,6 +1,0 @@
-
-[
-   {"base": "Ubuntu", "pkgname": "xyz", "pkgversion": "8.3.4"},
-   ...
-]
--> docker exec -e "COLUMNS=180" dpkg -l | awk '{print $2,$3}'
