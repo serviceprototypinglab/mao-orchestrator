@@ -2,8 +2,12 @@
 
 MAO-MAO collaborative research framework. Allows scheduled execution of periodic data collectors and has built-in spike detection for the data.
 This implementation makes use of an etcd cluster for member discovery, persistence and metadata sharing and a simple git interface for cloning data sets.
+## Contents
+- [Install instructions](#install-instructions) To setup the platform
+- [Using the CLI](#using-the-cli) To interact with the running instance
+- [Tool compliance](#tool-compliance) To create tools that can be deployed to the platform
 
-## Install instructions
+# Install instructions
 
 - Install etcd and start a cluster (or join the production cluster once it exists)
 ```
@@ -20,7 +24,7 @@ python3 async_launcher.py
 ```
 At this stage it runs in the foreground so you will need a new terminal.
 
-## Using the CLI
+# Using the CLI
 Interacting with the server is done via **maoctl**.
 
 At the top level there are 2 main commands, for interacting with tools or datasets.
@@ -120,3 +124,9 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
 ```
+# Tool Compliance
+To create tools that can be deployed to the MAO-MAO platform they need to comply with the following guidelines:
+- Must be dockerized
+- Must be able to launch with no interaction (the possibility to pass command line arguments may be added in a future update)
+- Must put their generated data files in the `/usr/src/app/data` folder, as this is the folder mounted to the container.
+- Must generate (in the same folder) a file named `control-<value>.csv` with each execution, where `value` should be sortable (for example the current date), in order for the spike detection to work. The file must contain a single numeric value (the control metric).
