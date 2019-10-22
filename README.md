@@ -14,7 +14,7 @@ This implementation makes use of an etcd cluster for member discovery, persisten
 sudo apt install etcd-server
 etcd
 ```
-- Setup your importdir and etcd settings in config.ini . Importdir is where your local data will be stored.
+- Setup your importdir and etcd settings in config.ini . Importdir is where your local data will be stored. The DATA_REPOS entries are auto-generated when a tool is run for the first time. You can delete the sample entry but do not delete the section.
 - `pip3 install -r requirements.txt`
 
 #### Starting the framework:
@@ -129,4 +129,5 @@ To create tools that can be deployed to the MAO-MAO platform they need to comply
 - Must be dockerized
 - Must be able to launch with no interaction (the possibility to pass command line arguments may be added in a future update)
 - Must put their generated data files in the `/usr/src/app/data` folder, as this is the folder mounted to the container.
+- Though this is not enforced, it is recommended that output files are generated in such a way that subsequent runs do not overwrite the data generated previously.
 - Must generate (in the same folder) a file named `control-<value>.csv` with each execution, where `value` should be sortable (for example the current date), in order for the spike detection to work. The file must contain a single numeric value (the control metric).
