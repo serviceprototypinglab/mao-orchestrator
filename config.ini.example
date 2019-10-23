@@ -1,0 +1,14 @@
+[WORKING_ENVIRONMENT]
+importdir =
+
+[ETCD]
+host = 127.0.0.1
+port = 2379
+
+[POSTGRES]
+user =
+password =
+db =
+
+[DATA_REPOS]
+test = test

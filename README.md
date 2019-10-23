@@ -1,7 +1,7 @@
 # MAO Orchestrator
 
-MAO-MAO collaborative research framework. Allows scheduled execution of periodic data collectors and has built-in spike detection for the data.
-This implementation makes use of an etcd cluster for member discovery, persistence and metadata sharing and a simple git interface for cloning data sets.
+Distributed orchestrator for the MAO-MAO collaborative research framework. Allows scheduled execution of periodic data collectors and has built-in spike detection for the data.
+This implementation makes use of an etcd cluster for member discovery and metadata sharing and a simple git interface for cloning data sets.
 ## Contents
 - [Install instructions](#install-instructions) To setup the platform
 - [Using the CLI](#using-the-cli) To interact with the running instance
@@ -17,12 +17,52 @@ etcd
 - Setup your importdir and etcd settings in config.ini . Importdir is where your local data will be stored. The DATA_REPOS entries are auto-generated when a tool is run for the first time. You can delete the sample entry but do not delete the section.
 - `pip3 install -r requirements.txt`
 
-#### Starting the framework:
+**NOTE:** The scheduler will not run on Python versions prior to 3.5
+
+## Persistence
+
+The registry of tools and datasets is always available to you as long as the etcd cluster is running. However job persistence within your instance is optional. To use it, you need to configure a persistent job store using the instructions below. If you do not wish to use this feature you can skip to the next section.
+
+- **Install PostgreSQL**
+
+```
+sudo apt install postgresql postgresql-contrib
+```
+
+- **Setup the Job Store database**
+For this example we will create a database called "schedule" owned by a user named "scheduler" with the password "password".
+  - Login to psql as the postgres user:
+  ```
+   sudo -i -u postgres psql
+  ```
+  - Create the user and database:
+  ```
+  drop user if exists scheduler;
+  create user scheduler with password 'password';
+  alter user scheduler createdb;
+  create database schedule;
+  grant all privileges on database schedule to scheduler;
+  ```
+  - Now you can log on to the Job Store as the "scheduler" user if you need to:
+  ```
+  psql -U scheduler -h localhost -d schedule
+  ```
+- **Fill in the connection details in config.ini**
+```
+[POSTGRES]
+user = scheduler
+password = password
+db = schedule
+```
+
+**Note:** If this section is not filled the scheduler will store the jobs in memory, and lose them when it quits. If this is the desired behavior, leave the entries blank, rather than deleting them.
+
+## Starting the framework:
 To launch the framework:
 ```
 python3 async_launcher.py
 ```
-At this stage it runs in the foreground so you will need a new terminal.
+By default it runs in the foreground so you will need a new terminal.
 
 # Using the CLI
 Interacting with the server is done via **maoctl**.
