@@ -3,9 +3,9 @@
 Distributed orchestrator for the MAO-MAO collaborative research framework. Allows scheduled execution of periodic data collectors and has built-in spike detection for the data.
 This implementation makes use of an etcd cluster for member discovery and metadata sharing and a simple git interface for cloning data sets.
 ## Contents
-- [Install instructions](#install-instructions) To setup the platform
+- [Install instructions](#install-instructions) To setup the orchestrator
 - [Using the CLI](#using-the-cli) To interact with the running instance
-- [Tool compliance](#tool-compliance) To create tools that can be deployed to the platform
+- [Tool compliance](#tool-compliance) To create tools that can be deployed to the orchestrator
 
 # Install instructions
 
@@ -165,7 +165,7 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 # Tool Compliance
-To create tools that can be deployed to the MAO-MAO platform they need to comply with the following guidelines:
+To create tools that can be deployed to the MAO Orchestrator they need to comply with the following guidelines:
 - Must be dockerized
 - Must be able to launch with no interaction (the possibility to pass command line arguments may be added in a future update)
 - Must put their generated data files in the `/usr/src/app/data` folder, as this is the folder mounted to the container.
