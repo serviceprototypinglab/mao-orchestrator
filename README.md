@@ -57,8 +57,8 @@ db = schedule
 
 **Note:** If this section is not filled the scheduler will store the jobs in memory, and lose them when it quits. If this is the desired behavior, leave the entries blank, rather than deleting them.
 
-## Starting the framework:
-To launch the framework:
+## Starting the orchestrator:
+To launch the orchestrator:
 ```
 python3 async_launcher.py
 ```
