@@ -14,7 +14,7 @@ This implementation makes use of an etcd cluster for member discovery and metada
 sudo apt install etcd-server
 etcd
 ```
-- Setup your importdir and etcd settings in config.ini . Importdir is where your local data will be stored. The DATA_REPOS entries are auto-generated when a tool is run for the first time. You can delete the sample entry but do not delete the section.
+- Setup your importdir and etcd settings in config.ini . Importdir is where your local data will be stored. The DATA_REPOS entries are auto-generated when a tool is run for the first time. You can delete the sample entry.
 - `pip3 install -r requirements.txt`
 
 **NOTE:** The scheduler will not run on Python versions prior to 3.5
@@ -55,7 +55,7 @@ password = password
 db = schedule
 ```
 
-**Note:** If this section is not filled the scheduler will store the jobs in memory, and lose them when it quits. If this is the desired behavior, leave the entries blank, rather than deleting them.
+**Note:** If this section is not filled the scheduler will store the jobs in memory, and lose them when it quits.
 
 ## Starting the orchestrator:
 To launch the orchestrator:

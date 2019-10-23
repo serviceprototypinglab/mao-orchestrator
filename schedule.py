@@ -8,13 +8,12 @@ import etcd
 docker_client = docker.from_env()
 config = configparser.ConfigParser()
 config.read('config.ini')
-importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
 etcd_host = config['ETCD']['HOST']
 etcd_port = int(config['ETCD']['PORT'])
 client = etcd.Client(host=etcd_host, port=etcd_port)
 scheduler = AsyncIOScheduler()
 jobstore = False
-if config['POSTGRES']['DB'] != '':
+if config.has_section('POSTGRES') and config['POSTGRES']['DB'] != '':
     postgres_user = config['POSTGRES']['USER']
     postgres_pass = config['POSTGRES']['PASSWORD']
     postgres_db = config['POSTGRES']['DB']

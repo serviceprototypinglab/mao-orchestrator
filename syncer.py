@@ -11,6 +11,8 @@ import schedule
 config = configparser.ConfigParser()
 config.read('config.ini')
 importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
+if importdir.endswith('/'):
+    importdir = importdir[:-1]
 etcd_host = config['ETCD']['HOST']
 etcd_port = int(config['ETCD']['PORT'])
 client = etcd.Client(host=etcd_host, port=etcd_port)
@@ -44,13 +46,15 @@ def sync(data):
     print("Data directory: " + dataset)
     response['datadir'] = dataset
     # Check if dataset has been cloned already
-    if data['name'] not in config['DATA_REPOS']:
+    if not config.has_option('DATA_REPOS', data['name']):
         # Clone dataset
         print("Cloning dataset from: " + payload['data_repo'] + " to: " + dataset)
         response['dataset'] = payload['data_repo']
         try:
             git.Repo.clone_from(payload['data_repo'], dataset)
             print("Updating config")
+            if not config.has_section('DATA_REPOS'):
+                config.add_section('DATA_REPOS')
             config.set('DATA_REPOS', data['name'], dataset)
             with open('config.ini', 'w') as f:
                 config.write(f)
