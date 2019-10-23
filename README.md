@@ -1,4 +1,4 @@
-# MAO-MAO-Framework
+# MAO Orchestrator
 
 MAO-MAO collaborative research framework. Allows scheduled execution of periodic data collectors and has built-in spike detection for the data.
 This implementation makes use of an etcd cluster for member discovery, persistence and metadata sharing and a simple git interface for cloning data sets.
