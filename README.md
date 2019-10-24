@@ -9,11 +9,16 @@ This implementation makes use of an etcd cluster for member discovery and metada
 
 # Install instructions
 
-- Install etcd and start a cluster (or join the production cluster once it exists)
+## etcd
+- Install etcd.
 ```
-sudo apt install etcd-server
-etcd
+sudo apt install etcd-server etcd-client
 ```
+It is possible to use a single-node configuration. While usable, it will not give access to the distributed nature of the system, ie the tools and datasets registered by other collaborators. At this point no 'production' cluster exists so the first volunteers will need to contact us (pang@zhaw.ch) to make the initial bootstrapping. Once the cluster exists and has at least 3 nodes, an automated registration service will be set up to handle adding additional members.
+- **etcd uses port 2380 for peer-to-peer communication** so ensure it is accessible
+- Initially, it may be needed for **port 2379 (for etcd client communication)** to be accessible as well.
+
+## Orchestrator configuration
 - Setup your importdir and etcd settings in config.ini . Importdir is where your local data will be stored. The DATA_REPOS entries are auto-generated when a tool is run for the first time. You can delete the sample entry.
 - `pip3 install -r requirements.txt`
 
@@ -171,3 +176,6 @@ To create tools that can be deployed to the MAO Orchestrator they need to comply
 - Must put their generated data files in the `/usr/src/app/data` folder, as this is the folder mounted to the container.
 - Though this is not enforced, it is recommended that output files are generated in such a way that subsequent runs do not overwrite the data generated previously.
 - Must generate (in the same folder) a file named `control-<value>.csv` with each execution, where `value` should be sortable (for example the current date), in order for the spike detection to work. The file must contain a single numeric value (the control metric).
+
+## The demo tool
+The demo tool creates 3 mock data samples to trigger the spike detection and also shows the basic way to create a compliant tool. You can build it with Docker and register it (with a Github repository for the data, you can use any repository since after cloning it will only add data locally not make any commits) to test the functionality of the orchestrator.
