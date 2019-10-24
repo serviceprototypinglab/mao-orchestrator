@@ -14,7 +14,10 @@ This implementation makes use of an etcd cluster for member discovery and metada
 ```
 sudo apt install etcd-server etcd-client
 ```
-It is possible to use a single-node configuration. While usable, it will not give access to the distributed nature of the system, ie the tools and datasets registered by other collaborators. At this point no 'production' cluster exists so the first volunteers will need to contact us (pang@zhaw.ch) to make the initial bootstrapping. Once the cluster exists and has at least 3 nodes, an automated registration service will be set up to handle adding additional members.
+
+etcd creates a system service upon installation that provides a local single node cluster. It is possible to just stop the service and start etcd with different parameters, however the proper method would be to write a configuration file and modify the system service to use it. Once this is tested in production a guide will be included in this README.
+
+It is possible to use a single-node configuration. While usable, it will not give access to the distributed nature of the system, ie the tools and datasets registered by other collaborators. At this point no 'production' cluster exists so the first volunteers will need to contact us (pang@zhaw.ch) to make the initial bootstrapping. Once the cluster exists and has at least 3 nodes, an automated registration service will be set up to allow future members to set up their node without direct communication with us.
 - **etcd uses port 2380 for peer-to-peer communication** so ensure it is accessible
 - Initially, it may be needed for **port 2379 (for etcd client communication)** to be accessible as well.
 
