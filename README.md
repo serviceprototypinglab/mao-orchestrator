@@ -34,7 +34,8 @@ The registry of tools and datasets is always available to you as long as the etc
 - **Install PostgreSQL**
 
 ```
-sudo apt install postgresql postgresql-contrib
+sudo apt install postgresql postgresql-contrib libpq-dev
+pip3 install psycopg2
 ```
 
 - **Setup the Job Store database**
