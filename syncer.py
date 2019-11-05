@@ -1,6 +1,5 @@
 import etcd
 import git
-from github import Github
 import datetime
 import configparser
 import requests

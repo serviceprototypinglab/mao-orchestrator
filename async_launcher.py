@@ -1,12 +1,9 @@
 from aiohttp import web
 import syncer
-from ruamel.yaml import YAML
 
 
 app = web.Application()
 routes = web.RouteTableDef()
-yaml = YAML()
-yaml.preserve_quotes = True
 
 
 @routes.get('/regtools')

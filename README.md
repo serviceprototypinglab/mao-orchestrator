@@ -15,11 +15,11 @@ This implementation makes use of an etcd cluster for member discovery and metada
 sudo apt install etcd-server etcd-client
 ```
 
-etcd creates a system service upon installation that provides a local single node cluster. It is possible to just stop the service and start etcd with different parameters, however the proper method would be to write a configuration file and modify the system service to use it. Once this is tested in production a guide will be included in this README.
+etcd creates a system service upon installation that provides a local single node cluster. To join the existing cluster you would have to contact us to add your server and come back to you with the necessary parameters, which need to be added to the execution parameters of the `etcd.service` file. An intermediate service automating some of these steps will be set up in the future, but modifying the service file will remain manual for safety.
 
-It is possible to use a single-node configuration. While usable, it will not give access to the distributed nature of the system, ie the tools and datasets registered by other collaborators. At this point no 'production' cluster exists so the first volunteers will need to contact us (pang@zhaw.ch) to make the initial bootstrapping. Once the cluster exists and has at least 3 nodes, an automated registration service will be set up to allow future members to set up their node without direct communication with us.
-- **etcd uses port 2380 for peer-to-peer communication** so ensure it is accessible
-- Initially, it may be needed for **port 2379 (for etcd client communication)** to be accessible as well.
+It is possible to use a single-node configuration. While usable, it will not give access to the distributed nature of the system, ie the tools and datasets registered by other collaborators.
+- **etcd uses port 2380 for peer-to-peer communication** so ensure it is accessible both for ingress and egress.
+- If you need to access etcd externally you will need **port 2379 (for etcd client communication)** to be accessible to ingress as well. This may be useful for debugging purposes or if you wish to install the Orchestrator on a different system from your etcd node.
 
 ## Orchestrator configuration
 - Setup your importdir and etcd settings in config.ini . Importdir is where your local data will be stored. The DATA_REPOS entries are auto-generated when a tool is run for the first time. You can delete the sample entry.
@@ -27,7 +27,7 @@ It is possible to use a single-node configuration. While usable, it will not giv
 
 **NOTE:** The scheduler will not run on Python versions prior to 3.5
 
-## Persistence
+## Job Persistence (optional)
 
 The registry of tools and datasets is always available to you as long as the etcd cluster is running. However job persistence within your instance is optional. To use it, you need to configure a persistent job store using the instructions below. If you do not wish to use this feature you can skip to the next section.
 
@@ -56,6 +56,7 @@ For this example we will create a database called "schedule" owned by a user nam
   ```
   psql -U scheduler -h localhost -d schedule
   ```
+  You should check this once after running the orchestrator for the first time. Since the notification listener job is started immediately, you should see at least once record in the job table in this database.
 - **Fill in the connection details in config.ini**
 ```
 [POSTGRES]
