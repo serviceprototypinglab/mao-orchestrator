@@ -12,6 +12,7 @@ etcd_host = config['ETCD']['HOST']
 etcd_port = int(config['ETCD']['PORT'])
 client = etcd.Client(host=etcd_host, port=etcd_port)
 scheduler = AsyncIOScheduler()
+scheduler.add_executor('processpool')
 jobstore = False
 if config.has_section('POSTGRES') and config['POSTGRES']['DB'] != '':
     postgres_user = config['POSTGRES']['USER']
