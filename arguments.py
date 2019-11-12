@@ -9,6 +9,7 @@ class Arguments:
         tool_parsers = parser_tool.add_subparsers(help="Tool-related commands", dest="tool")
         # TODO: get tools
         get_tools = tool_parsers.add_parser('get', help="List tools")
+        get_tools.add_argument('--name', help="Get details for tool")
         # TODO: register tool
         add_tools = tool_parsers.add_parser('add', help="Register a new tool")
         add_tools.add_argument('name', help="Name of the tool to register")
@@ -29,6 +30,7 @@ class Arguments:
         dataset_parsers = parser_dataset.add_subparsers(help="Dataset-related commands", dest='dataset')
         # TODO: get datasets
         get_datasets = dataset_parsers.add_parser('get', help="List datasets")
+        get_datasets.add_argument('--name', help="Get details for dataset")
         # TODO: register data
         add_datasets = dataset_parsers.add_parser('add', help="Register a new dataset")
         add_datasets.add_argument('name', help="Name of the dataset to register")

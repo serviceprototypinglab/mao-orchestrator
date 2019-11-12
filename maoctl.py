@@ -2,14 +2,22 @@ import arguments
 import requests
 
 
-def get_tools():
-    r = requests.get('http://0.0.0.0:8080/regtools')
-    print(r.json())
+def get_tools(*args):
+    if len(args) == 0:
+        r = requests.get('http://0.0.0.0:8080/regtools')
+        print(r.json())
+    else:
+        r = requests.get('http://0.0.0.0:8080/regtools/' + args[0])
+        print(r.json())
 
 
-def get_datasets():
-    r = requests.get('http://0.0.0.0:8080/datasets')
-    print(r.json())
+def get_datasets(*args):
+    if len(args) == 0:
+        r = requests.get('http://0.0.0.0:8080/regtools')
+        print(r.json())
+    else:
+        r = requests.get('http://0.0.0.0:8080/regtools/' + args[0])
+        print(r.json())
 
 
 def add_dataset(name, url):
@@ -98,7 +106,10 @@ if __name__ == '__main__':
     args = arguments.args
     if args.command == 'tool':
         if args.tool == 'get':
-            get_tools()
+            if args.name:
+                get_tools(args.name)
+            else:
+                get_tools()
         elif args.tool == 'add':
             add_tool(args.name, args.author, args.image, args.data_repo,
                      args.code_repo,args.artefact)
@@ -108,7 +119,10 @@ if __name__ == '__main__':
             schedule_tool(args.name, args.frequency)
     elif args.command == 'dataset':
         if args.dataset == 'get':
-            get_datasets()
+            if args.name:
+                get_datasets(args.name)
+            else:
+                get_datasets()
         elif args.dataset == 'add':
             add_dataset(args.name, args.url)
         elif args.dataset == 'clone':

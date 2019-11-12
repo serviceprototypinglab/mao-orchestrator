@@ -11,9 +11,19 @@ async def regtools(request):
     return web.json_response(syncer.list('tools'))
 
 
+@routes.get('/regtools/{tool}')
+async def regtools(request):
+    return web.json_response(syncer.get('tools/' + request.match_info['tool']))
+
+
 @routes.get('/datasets')
 async def datasets(request):
     return web.json_response(syncer.list('data'))
+
+
+@routes.get('/datasets/{dataset}')
+async def datasets(request):
+    return web.json_response(syncer.get('data/' + request.match_info['dataset']))
 
 
 @routes.post('/register')
@@ -36,6 +46,18 @@ async def register(request):
     data = await request.json()
     syncer.write("data/{}".format(data['name']), data['url'])
     return web.json_response(syncer.get("data/{}".format(data['name'])))
+
+
+@routes.post('/tooldelete')
+async def register(request):
+    data = await request.json()
+    return web.json_response(syncer.delete("tools/{}".format(data['name'])))
+
+
+@routes.post('/datadelete')
+async def register(request):
+    data = await request.json()
+    return web.json_response(syncer.delete("data/{}".format(data['name'])))
 
 
 @routes.post('/retrieve')

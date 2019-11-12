@@ -33,6 +33,11 @@ def get(key):
     return client.get(key).value
 
 
+def delete(key):
+    client.delete(key)
+    return "Successfully deleted " + key
+
+
 def sync(data):
     # Use new scheduler
     response = {}
