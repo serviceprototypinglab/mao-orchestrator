@@ -5,6 +5,7 @@ import configparser
 import requests
 import json
 import schedule
+import shutil
 
 
 config = configparser.ConfigParser()
@@ -36,6 +37,14 @@ def get(key):
 def delete(key):
     client.delete(key)
     return "Successfully deleted " + key
+
+
+def list_jobs():
+    return schedule.list_jobs()
+
+
+def remove_job(id):
+    return schedule.delete_job(id)
 
 
 def sync(data):
@@ -86,6 +95,21 @@ def sync(data):
     return response
 
 
+def list_local():
+    response = {}
+    for entry in config['DATA_REPOS']:
+        response[entry] = config['DATA_REPOS'][entry]
+    return response
+
+def remove_local(name):
+    shutil.rmtree(config['DATA_REPOS'][name])
+    config.remove_option('DATA_REPOS',name)
+    with open('config.ini', 'w') as f:
+        config.write(f)
+    return "Deleted {} from local filesystem".format(name)
+
+
+
 def retrieve(name):
     try:
         value = client.get("/data/" + name).value
@@ -94,7 +118,28 @@ def retrieve(name):
         return "This name does not correspond to an entry"
     try:
         git.Repo.clone_from(value, importdir + "/" + name)
+        if not config.has_option('DATA_REPOS', name):
+            print("Updating config")
+            if not config.has_section('DATA_REPOS'):
+                config.add_section('DATA_REPOS')
+            config.set('DATA_REPOS', name, importdir + "/" + name)
+            with open('config.ini', 'w') as f:
+                config.write(f)
         return "Cloned: {} to {}".format(value, importdir + "/" + name)
     except:
-        print("Error cloning data")
-        return "Error clonding data"
+        print("Error cloning data, trying to pull")
+    try:
+        repo = git.Repo(importdir + "/" + name)
+        o = repo.remotes.origin
+        o.pull()
+        if not config.has_option('DATA_REPOS', name):
+            print("Updating config")
+            if not config.has_section('DATA_REPOS'):
+                config.add_section('DATA_REPOS')
+            config.set('DATA_REPOS', name, importdir + "/" + name)
+            with open('config.ini', 'w') as f:
+                config.write(f)
+        return "Pulled: {} to {}".format(value, importdir + "/" + name)
+    except:
+        print("Error pulling data.")
+        return "Error pulling data."

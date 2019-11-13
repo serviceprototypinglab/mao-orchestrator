@@ -22,6 +22,11 @@ class Arguments:
         run_tools = tool_parsers.add_parser('run', help="Execute a tool immediately")
         run_tools.add_argument('name', help="Name of the tool to run")
 
+        scheduled_tools = tool_parsers.add_parser('list-scheduled', help="List scheduled jobs")
+
+        stop_tools = tool_parsers.add_parser('stop', help="Unschedule a tool")
+        stop_tools.add_argument('id', help="ID of the tool to unschedule")
+
         remove_tools = tool_parsers.add_parser('remove', help="Unregister a tool")
         remove_tools.add_argument('name', help="Name of the tool to unregister")
 
@@ -34,6 +39,8 @@ class Arguments:
         # TODO: get datasets
         get_datasets = dataset_parsers.add_parser('get', help="List datasets")
         get_datasets.add_argument('--name', help="Get details for dataset")
+
+        local_datasets = dataset_parsers.add_parser('list-local', help="List cloned datasets")
         # TODO: register data
         add_datasets = dataset_parsers.add_parser('add', help="Register a new dataset")
         add_datasets.add_argument('name', help="Name of the dataset to register")
@@ -44,6 +51,9 @@ class Arguments:
 
         remove_dataset = dataset_parsers.add_parser('remove', help="Unregister a dataset")
         remove_dataset.add_argument('name', help="Name of the dataset to unregister")
+
+        remove_local_dataset = dataset_parsers.add_parser('remove-local', help="Delete dataset from local filesystem")
+        remove_local_dataset.add_argument('name', help="Name of the dataset to delete")
 
         self.args = parser.parse_args()
         # TODO: change respones of all so that they send JSON objects to this

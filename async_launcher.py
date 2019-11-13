@@ -26,6 +26,16 @@ async def datasets(request):
     return web.json_response(syncer.get('data/' + request.match_info['dataset']))
 
 
+@routes.get('/locallist')
+async def datasets(request):
+    return web.json_response(syncer.list_local())
+
+
+@routes.get('/jobslist')
+async def datasets(request):
+    return web.json_response(syncer.list_jobs())
+
+
 @routes.post('/register')
 async def register(request):
     data = await request.json()
@@ -58,6 +68,19 @@ async def register(request):
 async def register(request):
     data = await request.json()
     return web.json_response(syncer.delete("data/{}".format(data['name'])))
+
+
+@routes.post('/jobdelete')
+async def register(request):
+    data = await request.json()
+    return web.json_response(syncer.remove_job(data['id']))
+
+
+@routes.post('/localdelete')
+async def register(request):
+    data = await request.json()
+    return web.json_response(syncer.remove_local(data['name']))
+
 
 
 @routes.post('/retrieve')

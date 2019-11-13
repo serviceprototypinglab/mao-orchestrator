@@ -20,6 +20,16 @@ def get_datasets(*args):
         print(r.json())
 
 
+def list_scheduled():
+    r = requests.get('http://0.0.0.0:8080/jobslist')
+    print(r.json())
+
+
+def list_local():
+    r = requests.get('http://0.0.0.0:8080/locallist')
+    print(r.json())
+
+
 def add_dataset(name, url):
     #name = input("Name of dataset: ")
     #url = input("URL of dataset repo: ")
@@ -65,6 +75,22 @@ def remove_dataset(name):
     "name": name
     }
     r = requests.post('http://0.0.0.0:8080/datadelete', json=json_out)
+    print(r.json())
+
+
+def stop(id):
+    json_out = {
+    "id": id
+    }
+    r = requests.post('http://0.0.0.0:8080/jobdelete', json=json_out)
+    print(r.json())
+
+
+def remove_local(name):
+    json_out = {
+    "name": name
+    }
+    r = requests.post('http://0.0.0.0:8080/localdelete', json=json_out)
     print(r.json())
 
 
@@ -135,6 +161,10 @@ if __name__ == '__main__':
             schedule_tool(args.name, args.frequency)
         elif args.tool == 'remove':
             remove_tool(args.name)
+        elif args.tool == 'list-scheduled':
+            list_scheduled()
+        elif args.tool == 'stop':
+            stop(args.id)
     elif args.command == 'dataset':
         if args.dataset == 'get':
             if args.name:
@@ -147,3 +177,7 @@ if __name__ == '__main__':
             clone_dataset(args.name)
         elif args.dataset == 'remove':
             remove_dataset(args.name)
+        elif args.dataset == 'list-local':
+            list_local()
+        elif args.dataset == 'remove-local':
+            remove_local(args.name)

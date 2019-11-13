@@ -41,11 +41,13 @@ def schedule_run(data):
         freq = data['freq']
         if freq == 'daily':
             job = scheduler.add_job(run_container, 'interval', days=1,
-                                    args=[container, tool, dataset],
+                                    args=[container, tool, dataset], id=tool,
+                                    replace_existing=True,
                                     misfire_grace_time=3600, coalesce=True)
         elif freq == 'weekly':
             job = scheduler.add_job(run_container, 'interval', weeks=1,
-                                    args=[container, tool, dataset],
+                                    args=[container, tool, dataset], id=tool,
+                                    replace_existing=True,
                                     misfire_grace_time=3600, coalesce=True)
         response['job'] = job.id
         return response
@@ -75,6 +77,20 @@ def listen():
 
         print("No notifications")
 
-if jobstore and scheduler.get_jobs() == []:
-    scheduler.add_job(listen, 'interval', seconds=10,
+if jobstore:
+    scheduler.add_job(listen, 'interval', seconds=10, id = 'listen',
+                      replace_existing=True,
                       misfire_grace_time=5, coalesce=True)
+
+
+def list_jobs():
+    job_list = scheduler.get_jobs()
+    response = {}
+    for item in job_list:
+        response[item.id] = str(item.next_run_time)
+    return response
+
+
+def delete_job(id):
+    scheduler.remove_job(id)
+    return "Unscheduled " + id
