@@ -52,6 +52,22 @@ def clone_dataset(name):
     print(r.json())
 
 
+def remove_tool(name):
+    json_out = {
+    "name": name
+    }
+    r = requests.post('http://0.0.0.0:8080/tooldelete', json=json_out)
+    print(r.json())
+
+
+def remove_dataset(name):
+    json_out = {
+    "name": name
+    }
+    r = requests.post('http://0.0.0.0:8080/datadelete', json=json_out)
+    print(r.json())
+
+
 def run_tool(name):
     json_out = {
     "name": name,
@@ -117,6 +133,8 @@ if __name__ == '__main__':
             run_tool(args.name)
         elif args.tool == 'schedule':
             schedule_tool(args.name, args.frequency)
+        elif args.tool == 'remove':
+            remove_tool(args.name)
     elif args.command == 'dataset':
         if args.dataset == 'get':
             if args.name:
@@ -127,3 +145,5 @@ if __name__ == '__main__':
             add_dataset(args.name, args.url)
         elif args.dataset == 'clone':
             clone_dataset(args.name)
+        elif args.dataset == 'remove':
+            remove_dataset(args.name)

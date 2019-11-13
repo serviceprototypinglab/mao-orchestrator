@@ -22,6 +22,9 @@ class Arguments:
         run_tools = tool_parsers.add_parser('run', help="Execute a tool immediately")
         run_tools.add_argument('name', help="Name of the tool to run")
 
+        remove_tools = tool_parsers.add_parser('remove', help="Unregister a tool")
+        remove_tools.add_argument('name', help="Name of the tool to unregister")
+
         schedule_tools = tool_parsers.add_parser('schedule', help="Schedule a tool to run periodically")
         schedule_tools.add_argument('name', help="Name of the tool to schedule")
         schedule_tools.add_argument('frequency', choices=['daily', 'weekly'], help="Execution schedule: daily/weekly")
@@ -38,6 +41,9 @@ class Arguments:
         # TODO: retrieve data
         clone_datasets = dataset_parsers.add_parser('clone', help="Clone a dataset")
         clone_datasets.add_argument('name', help="Name of the dataset to retrieve")
+
+        remove_dataset = dataset_parsers.add_parser('remove', help="Unregister a dataset")
+        remove_dataset.add_argument('name', help="Name of the dataset to unregister")
 
         self.args = parser.parse_args()
         # TODO: change respones of all so that they send JSON objects to this
