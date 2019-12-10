@@ -6,6 +6,9 @@ import requests
 import json
 import schedule
 import shutil
+import base64
+import glob
+from datetime import datetime
 
 
 config = configparser.ConfigParser()
@@ -143,3 +146,30 @@ def retrieve(name):
     except:
         print("Error pulling data.")
         return "Error pulling data."
+
+
+def create_audit(tool):
+    # Creation of audit entry
+    issuer = config['WORKING_ENVIRONMENT']['user']
+    timestamp = datetime.now()
+    audit_id = timestamp.microsecond
+    write("audit/{}".format(audit_id), '{{"issuer":"{}",\
+    "tool":"{}",\
+    "timestamp":"{}"}}'.format(issuer, tool, timestamp))
+    # Send file if exists
+    if config.has_option('DATA_REPOS', tool):
+        # find most recent csv
+        path = config['DATA_REPOS'][tool]
+        filenames = glob.glob("{}/*.csv".format(path))
+        filenames.sort()
+        # filenames[-1] is the latest file
+        # if they are named appropriately
+        with open(filenames[-1], 'rb') as f:
+            encoded = base64.b64encode(f.read())
+        # write entry with encoded payload
+        write("csv/{}/{}".format(audit_id, issuer), '{{"tool":"{}",\
+        "timestamp":"{}",\
+        "payload":"{}"}}'.format(tool, datetime.now(), encoded))
+        return "Created audit {} and submitted file {}".format(audit_id, filenames[-1])
+    else:
+        return "Created audit {}. No local file to submit.".format(audit_id)

@@ -13,10 +13,10 @@ def get_tools(*args):
 
 def get_datasets(*args):
     if len(args) == 0:
-        r = requests.get('http://0.0.0.0:8080/regtools')
+        r = requests.get('http://0.0.0.0:8080/datasets')
         print(r.json())
     else:
-        r = requests.get('http://0.0.0.0:8080/regtools/' + args[0])
+        r = requests.get('http://0.0.0.0:8080/datasets/' + args[0])
         print(r.json())
 
 
@@ -91,6 +91,14 @@ def remove_local(name):
     "name": name
     }
     r = requests.post('http://0.0.0.0:8080/localdelete', json=json_out)
+    print(r.json())
+
+
+def audit(name):
+    json_out = {
+    "name": name
+    }
+    r = requests.post('http://0.0.0.0:8080/audit', json=json_out)
     print(r.json())
 
 
@@ -181,3 +189,5 @@ if __name__ == '__main__':
             list_local()
         elif args.dataset == 'remove-local':
             remove_local(args.name)
+        elif args.dataset == 'audit':
+            audit(args.name)

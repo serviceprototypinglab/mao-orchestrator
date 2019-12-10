@@ -1,5 +1,7 @@
 [WORKING_ENVIRONMENT]
 importdir =
+auditdir =
+user = panos
 
 [ETCD]
 host = 127.0.0.1

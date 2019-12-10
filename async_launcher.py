@@ -82,6 +82,11 @@ async def register(request):
     return web.json_response(syncer.remove_local(data['name']))
 
 
+@routes.post('/audit')
+async def register(request):
+    data = await request.json()
+    return web.json_response(syncer.create_audit(data['name']))
+
 
 @routes.post('/retrieve')
 async def retrieve(request):
