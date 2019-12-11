@@ -1,0 +1,1 @@
+docker run -it --network host -v /var/run/docker.sock:/var/run/docker.sock -v /home/panos/newconfig:/home/panos/newconfig -v /home/panos/audit_temp:/home/panos/audit_temp -p 8080:8080 5a0090dd1169

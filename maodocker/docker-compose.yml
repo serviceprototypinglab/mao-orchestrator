@@ -1,0 +1,52 @@
+version: "3"
+services:
+  mao:
+    build: .
+    container_name: "mao"
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/panos/newconfig:/home/panos/newconfig
+      - /home/panos/audit_temp:/home/panos/audit_temp
+    networks:
+        - mao
+    depends_on:
+      - etcd
+      - db
+  db:
+    image: "postgres"
+    container_name: "db"
+    environment:
+      - POSTGRES_USER=scheduler
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=schedule
+    ports:
+      - "54320:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+        - mao
+  etcd:
+    image: quay.io/coreos/etcd
+    container_name: "etcd"
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_NAME=etcd
+      - DATA-DIR=/etcd-data
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
+      - ETCD_INITIAL_CLUSTER=etcd=http://etcd:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+    ports:
+      - "23790:2379"
+      - "23800:2380"
+    volumes:
+      - ./etcd-data:/etcd-data
+    networks:
+        - mao
+networks:
+  mao:
