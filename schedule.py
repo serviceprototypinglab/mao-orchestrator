@@ -24,8 +24,9 @@ if config.has_section('POSTGRES') and config['POSTGRES']['DB'] != '':
     postgres_user = config['POSTGRES']['USER']
     postgres_pass = config['POSTGRES']['PASSWORD']
     postgres_db = config['POSTGRES']['DB']
-    url = 'postgresql://{}:{}@localhost/{}'.format(postgres_user, postgres_pass,
-                                                   postgres_db)
+    postgres_host = config['POSTGRES']['HOST']
+    url = 'postgresql://{}:{}@{}/{}'.format(postgres_user, postgres_pass,
+                                                   postgres_host, postgres_db)
     scheduler.add_jobstore('sqlalchemy', url=url)
     jobstore = True
 scheduler.start()

@@ -11,6 +11,7 @@ port = 2379
 user =
 password =
 db =
+host = 127.0.0.1
 
 [DATA_REPOS]
 test = test
