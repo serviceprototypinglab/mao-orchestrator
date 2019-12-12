@@ -1,6 +1,6 @@
 # MAO Orchestrator
 
-Distributed orchestrator for the MAO-MAO collaborative research framework. Allows scheduled execution of periodic data collectors and has built-in spike detection for the data.
+Distributed orchestrator for the [MAO-MAO collaborative research](https://mao-mao-research.github.io/) framework. Allows scheduled execution of periodic data collectors and has built-in spike detection for the data.
 This implementation makes use of an etcd cluster for member discovery and metadata sharing and a simple git interface for cloning data sets.
 ## Contents
 - [Install instructions](#install-instructions) To setup the orchestrator
