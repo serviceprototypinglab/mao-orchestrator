@@ -1,12 +1,15 @@
 version: "3"
 services:
+  # The orchestrator
   mao:
     build: .
     container_name: "mao"
     ports:
       - "8080:8080"
     volumes:
+      # Mount the host's Docker socket
       - /var/run/docker.sock:/var/run/docker.sock
+      # Mount the data directories from the config file
       - /home/panos/newconfig:/home/panos/newconfig
       - /home/panos/audit_temp:/home/panos/audit_temp
     networks:
@@ -14,6 +17,7 @@ services:
     depends_on:
       - etcd
       - db
+  # The jobstore for scheduling crawlers and etcd listeners
   db:
     image: "postgres"
     container_name: "db"
@@ -27,17 +31,26 @@ services:
       - ./postgres-data:/var/lib/postgresql/data
     networks:
         - mao
+  # The etcd node
   etcd:
     image: quay.io/coreos/etcd
     container_name: "etcd"
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
+      # The name this node will be added to the cluster with
       - ETCD_NAME=etcd
+      # Make sure this matches the volume
       - DATA-DIR=/etcd-data
+      # Endpoint the peers in the cluster will use to talk to this node
       - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
+      # Endpoint this node is listening at for peer requests
       - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      # Endpoint this node is listening at for client requests
       - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      # Endpoint clients can use to talk to this node
       - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      # The settings below need to be retrieved from an existing node
+      # to join an existing cluster
       - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
       - ETCD_INITIAL_CLUSTER=etcd=http://etcd:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
@@ -49,4 +62,5 @@ services:
     networks:
         - mao
 networks:
+  # Creates the <directory_name>_mao network in Docker
   mao:
