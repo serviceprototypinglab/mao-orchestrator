@@ -8,6 +8,7 @@ import json
 import base64
 import glob
 import os
+import insights
 from datetime import datetime
 
 
@@ -66,8 +67,10 @@ def schedule_run(data):
 def run_container(container, tool, dataset):
     result = {}
     docker_client.containers.run(container,
-                                 volumes={dataset: {'bind': '/usr/src/app/data'}})
+                                 volumes={dataset: {'bind': '/usr/src/app/data'}},
+                                 network='host')
     result = differ.detect(dataset, tool)
+    insights.report(dataset, tool, config['WORKING_ENVIRONMENT']['user'])
     return result
 
 

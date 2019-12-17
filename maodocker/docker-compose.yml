@@ -1,9 +1,9 @@
 version: "3"
 services:
   # The orchestrator
-  mao:
+  mao1:
     build: .
-    container_name: "mao"
+    container_name: "mao1"
     ports:
       - "8080:8080"
     volumes:
@@ -62,5 +62,6 @@ services:
     networks:
         - mao
 networks:
-  # Creates the <directory_name>_mao network in Docker
+  # Connects to existing bridge network (see commands)
   mao:
+    external: true
