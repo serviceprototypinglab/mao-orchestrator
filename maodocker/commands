@@ -3,3 +3,14 @@ docker run -it --network host -v /var/run/docker.sock:/var/run/docker.sock -v /h
 docker network create mao --driver bridge
 # To rebuild the images
 docker-compose build
+Request needs to escape slashes
+{
+	"key":"insight\/spike\/sonap"
+}
+# Write raw data to cluster so they get saved to datasets
+{
+	"key":"raw\/newtest\/file7",
+	"value":{
+		"iam":"groot"
+	}
+}

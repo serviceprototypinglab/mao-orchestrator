@@ -1,5 +1,6 @@
 from aiohttp import web
 import syncer
+import json
 
 
 app = web.Application()
@@ -44,7 +45,7 @@ async def write(request):
 @routes.post('/read')
 async def write(request):
     data = await request.json()
-    return web.json_response(syncer.get(data['key']))
+    return web.json_response(json.loads(syncer.get(data['key'])))
 
 @routes.post('/register')
 async def register(request):

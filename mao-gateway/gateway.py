@@ -52,7 +52,7 @@ async def register(request):
     json_out = {
         "key": data['key']
     }
-    response = requests.post('http://{}:8080/write'.format(ip),
+    response = requests.post('http://{}:8080/read'.format(ip),
                              json=json_out)
     return web.json_response(response.json())
 
