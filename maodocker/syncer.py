@@ -131,21 +131,21 @@ def retrieve(name):
         return "Cloned: {} to {}".format(value, importdir + "/" + name)
     except:
         print("Error cloning data, trying to pull")
-    #try:
-    repo = git.Repo(importdir + "/" + name)
-    o = repo.remotes.origin
-    o.pull()
-    if not config.has_option('DATA_REPOS', name):
-        print("Updating config")
-        if not config.has_section('DATA_REPOS'):
-            config.add_section('DATA_REPOS')
-        config.set('DATA_REPOS', name, importdir + "/" + name)
-        with open('config.ini', 'w') as f:
-            config.write(f)
-    return "Pulled: {} to {}".format(value, importdir + "/" + name)
-    #except:
-        #print("Error pulling data.")
-        #return "Error pulling data."
+    try:
+        repo = git.Repo(importdir + "/" + name)
+        o = repo.remotes.origin
+        o.pull()
+        if not config.has_option('DATA_REPOS', name):
+            print("Updating config")
+            if not config.has_section('DATA_REPOS'):
+                config.add_section('DATA_REPOS')
+            config.set('DATA_REPOS', name, importdir + "/" + name)
+            with open('config.ini', 'w') as f:
+                config.write(f)
+        return "Pulled: {} to {}".format(value, importdir + "/" + name)
+    except:
+        print("Error pulling data.")
+        return "Error pulling data."
 
 
 def create_audit(tool):
