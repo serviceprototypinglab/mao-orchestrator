@@ -26,6 +26,37 @@ async def register(request):
     return web.json_response(response.json())
 
 
+@routes.post('/write')
+async def register(request):
+    data = await request.json()
+    ips = session.get_ips()
+    index = random.randint(0, len(ips) - 1)
+    print(index)
+    ip = ips[index]
+    json_out = {
+        "key": data['key'],
+        "value": data['value']
+    }
+    response = requests.post('http://{}:8080/write'.format(ip),
+                             json=json_out)
+    return web.json_response(response.json())
+
+
+@routes.post('/read')
+async def register(request):
+    data = await request.json()
+    ips = session.get_ips()
+    index = random.randint(0, len(ips) - 1)
+    print(index)
+    ip = ips[index]
+    json_out = {
+        "key": data['key']
+    }
+    response = requests.post('http://{}:8080/write'.format(ip),
+                             json=json_out)
+    return web.json_response(response.json())
+
+
 app.add_routes(routes)
 if __name__ == '__main__':
     web.run_app(app, host='0.0.0.0', port=8081)

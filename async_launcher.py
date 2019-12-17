@@ -35,6 +35,16 @@ async def datasets(request):
 async def datasets(request):
     return web.json_response(syncer.list_jobs())
 
+@routes.post('/write')
+async def write(request):
+    data = await request.json()
+    syncer.write(data['key'], data['value'])
+    return web.json_response(syncer.get(data['key']))
+
+@routes.post('/read')
+async def write(request):
+    data = await request.json()
+    return web.json_response(syncer.get(data['key']))
 
 @routes.post('/register')
 async def register(request):

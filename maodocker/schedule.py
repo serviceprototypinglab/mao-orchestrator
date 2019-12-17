@@ -85,6 +85,26 @@ def listen():
         print("No notifications")
 
 
+def data_listen():
+    try:
+        directory = client.read('raw', recursive=True)
+        qresult = {}
+        for result in directory.children:
+            qresult[result.key] = result.value
+        print(qresult)
+        for key, value in qresult.items():
+            dir = config['WORKING_ENVIRONMENT']['importdir'] + '/' + key.split('/')[2]
+            filename = dir + '/' + key.split('/')[3] + '.json'
+            print(filename)
+            print(value)
+            if not os.path.isdir(dir):
+                os.mkdir(dir)
+            with open(filename, 'w') as output:
+                output.write(value)
+    except etcd.EtcdKeyNotFound:
+        print("No pernding data")
+
+
 def audit_listen():
     # delete known audits entries older than 10 minutes
     with open('known_audits.json', 'r') as archive:
@@ -195,6 +215,9 @@ def delete_job(id):
 
 if jobstore:
     scheduler.add_job(listen, 'interval', seconds=10, id = 'listen',
+                      replace_existing=True,
+                      misfire_grace_time=5, coalesce=True)
+    scheduler.add_job(data_listen, 'interval', seconds=10, id = 'data_listen',
                       replace_existing=True,
                       misfire_grace_time=5, coalesce=True)
     scheduler.add_job(audit_listen, 'interval', seconds=10, id = 'audit_listen',
