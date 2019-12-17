@@ -21,8 +21,11 @@ etcd_port = int(config['ETCD']['PORT'])
 client = etcd.Client(host=etcd_host, port=etcd_port)
 
 
-def write(key,value):
-    client.set(key, value)
+def write(key, value, ephemeral=False):
+    if !ephemeral:
+        client.set(key, value)
+    else:
+        client.set(key, value, ttl=60)
 
 
 def list(key):
