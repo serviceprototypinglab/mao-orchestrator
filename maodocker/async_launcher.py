@@ -39,8 +39,8 @@ async def datasets(request):
 @routes.post('/write')
 async def write(request):
     data = await request.json()
-    syncer.write(data['key'], data['value'])
-    return web.json_response(syncer.get(data['key']))
+    syncer.write('raw/' + data['key'], data['value'])
+    return web.json_response(syncer.get('raw/' + data['key']))
 
 @routes.post('/read')
 async def write(request):
