@@ -1,7 +1,7 @@
 import csv
 import glob
 import sys
-import syncer
+import etcd_client
 import datetime
 
 
@@ -35,9 +35,9 @@ def detect(path, name):
         if gain > 6 or gain < -6:
             print("Data has spiked.")
             result['spike'] = True
-            syncer.write('notifications/' + str(datetime.datetime.now()), name)
+            etcd_client.write('notifications/' + str(datetime.datetime.now()), name)
             print("Notification entry writen to cluster.")
-            print(syncer.list('notifications'))
+            print(etcd_client.list('notifications'))
             return result
         else:
             print("Gain within expected margin")

@@ -1,4 +1,3 @@
-import etcd
 import git
 import datetime
 import configparser
@@ -10,6 +9,7 @@ import base64
 import glob
 from datetime import datetime
 import audit
+from etcd_client import write, list, get, delete
 
 
 config = configparser.ConfigParser()
@@ -17,33 +17,6 @@ config.read('config.ini')
 importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
 if importdir.endswith('/'):
     importdir = importdir[:-1]
-etcd_host = config['ETCD']['HOST']
-etcd_port = int(config['ETCD']['PORT'])
-client = etcd.Client(host=etcd_host, port=etcd_port)
-
-
-def write(key, value, ephemeral=False):
-    if !ephemeral:
-        client.set(key, value)
-    else:
-        client.set(key, value, ttl=60)
-
-
-def list(key):
-    directory = client.get(key)
-    qresult = []
-    for result in directory.children:
-        qresult.append(result.key)
-    return qresult
-
-
-def get(key):
-    return client.get(key).value
-
-
-def delete(key):
-    client.delete(key)
-    return "Successfully deleted " + key
 
 
 def list_jobs():
@@ -57,7 +30,7 @@ def remove_job(id):
 def sync(data):
     # Use new scheduler
     response = {}
-    blob = client.get('tools/{}'.format(data['name'])).value
+    blob = get('tools/{}'.format(data['name']))
     payload = json.loads(blob)
     tool = payload['image']
     print("Tool invoked: " + tool)
@@ -119,7 +92,7 @@ def remove_local(name):
 
 def retrieve(name):
     try:
-        value = client.get("/data/" + name).value
+        value = get("/data/" + name)
     except:
         print("No such entry")
         return "This name does not correspond to an entry"

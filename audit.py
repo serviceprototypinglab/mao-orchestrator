@@ -2,17 +2,11 @@ import csv
 import glob
 import itertools
 import base64
-import configparser
 import os
 import json
-import etcd
+import etcd_client
 from datetime import datetime
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-etcd_host = config['ETCD']['HOST']
-etcd_port = int(config['ETCD']['PORT'])
-client = etcd.Client(host=etcd_host, port=etcd_port)
 
 def decode(csvs):
     # decode csvs
@@ -64,7 +58,7 @@ def submit(tool, audit_id, issuer):
     with open(filenames[-1], 'rb') as f:
         encoded = base64.b64encode(f.read())
     # write entry with encoded payload
-    client.set("csv/{}/{}".format(audit_id, issuer), '{{"tool":"{}",\
+    etcd_client.write("csv/{}/{}".format(audit_id, issuer), '{{"tool":"{}",\
     "timestamp":"{}",\
     "payload":"{}"}}'.format(tool, datetime.now(), encoded))
     return filenames[-1]
@@ -123,7 +117,7 @@ def validate(details, audit_id):
     if not os.path.isdir(audit_dir):
         os.mkdir(audit_dir)
     #get csv entries for this audit
-    files = client.get('csv/{}'.format(audit_id))
+    files = etcd_client.get('csv/{}'.format(audit_id))
     csvs = {}
     # retrieve encoded csvs
     for result in files.children:
@@ -138,9 +132,9 @@ def validate(details, audit_id):
     print(details['tool'])
     print(details['timestamp'])
     print(str(winner))
-    client.set("winners/{}".format(audit_id), '{{"tool":"{}",\
+    etcd_client.write("winners/{}".format(audit_id), '{{"tool":"{}",\
     "timestamp":"{}",\
     "winner":"{}"}}'.format(details['tool'], details['timestamp'], str(winner)))
     #delete audit, csvs and temp files
-    client.delete("/csv/{}".format(audit_id), recursive=True)
-    client.delete("/audit/{}".format(audit_id), recursive=True)
+    etcd_client.delete_recursive("/csv/{}".format(audit_id))
+    etcd_client.delete_recursive("/audit/{}".format(audit_id))

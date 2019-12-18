@@ -2,7 +2,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import differ
 import docker
 import configparser
-import etcd
+import etcd_client
 import audit
 import json
 import base64
@@ -15,9 +15,6 @@ from datetime import datetime
 docker_client = docker.from_env()
 config = configparser.ConfigParser()
 config.read('config.ini')
-etcd_host = config['ETCD']['HOST']
-etcd_port = int(config['ETCD']['PORT'])
-client = etcd.Client(host=etcd_host, port=etcd_port)
 scheduler = AsyncIOScheduler()
 scheduler.add_executor('processpool')
 jobstore = False
@@ -76,7 +73,7 @@ def run_container(container, tool, dataset):
 
 def listen():
     try:
-        directory = client.get('notifications')
+        directory = etcd_client.get('notifications')
         qresult = {}
         for result in directory.children:
             qresult[result.key] = result.value
@@ -90,7 +87,7 @@ def listen():
 
 def data_listen():
     try:
-        directory = client.read('raw', recursive=True)
+        directory = etcd_client.read_recursive('raw')
         qresult = {}
         for result in directory.children:
             qresult[result.key] = result.value
@@ -113,7 +110,7 @@ def audit_listen():
     known_audits = audit.cleanup()
     try:
         # get all audits
-        directory = client.get('audit')
+        directory = etcd_client.get('audit')
         audits = {}
         current_user = config['WORKING_ENVIRONMENT']['user']
         for result in directory.children:

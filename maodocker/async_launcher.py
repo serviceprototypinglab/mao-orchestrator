@@ -1,5 +1,6 @@
 from aiohttp import web
 import syncer
+import etcd_client
 import json
 
 
@@ -9,48 +10,48 @@ routes = web.RouteTableDef()
 
 @routes.get('/regtools')
 async def regtools(request):
-    return web.json_response(syncer.list('tools'))
+    return web.json_response(etcd_client.list('tools'))
 
 
 @routes.get('/regtools/{tool}')
 async def regtools(request):
-    return web.json_response(syncer.get('tools/' + request.match_info['tool']))
+    return web.json_response(etcd_client.get('tools/' + request.match_info['tool']))
 
 
 @routes.get('/datasets')
 async def datasets(request):
-    return web.json_response(syncer.list('data'))
+    return web.json_response(etcd_client.list('data'))
 
 
 @routes.get('/datasets/{dataset}')
 async def datasets(request):
-    return web.json_response(syncer.get('data/' + request.match_info['dataset']))
+    return web.json_response(etcd_client.get('data/' + request.match_info['dataset']))
 
 
 @routes.get('/locallist')
 async def datasets(request):
-    return web.json_response(syncer.list_local())
+    return web.json_response(etcd_client.list_local())
 
 
 @routes.get('/jobslist')
 async def datasets(request):
-    return web.json_response(syncer.list_jobs())
+    return web.json_response(etcd_client.list_jobs())
 
 @routes.post('/write')
 async def write(request):
     data = await request.json()
-    syncer.write('raw/' + data['key'], data['value'], ephemeral=True)
-    return web.json_response(syncer.get('raw/' + data['key']))
+    etcd_client.write('raw/' + data['key'], data['value'], ephemeral=True)
+    return web.json_response(etcd_client.get('raw/' + data['key']))
 
 @routes.post('/read')
 async def write(request):
     data = await request.json()
-    return web.json_response(json.loads(syncer.get(data['key'])))
+    return web.json_response(json.loads(etcd_client.get(data['key'])))
 
 @routes.post('/register')
 async def register(request):
     data = await request.json()
-    syncer.write("tools/{}".format(data['name']),
+    etcd_client.write("tools/{}".format(data['name']),
                     '{{"author":"{}",\
 "image":"{}",\
 "data_repo":"{}",\
@@ -59,26 +60,26 @@ async def register(request):
                        .format(data['author'], data['image'],
                                data['data_repo'], data['code_repo'],
                                data['artefact']))
-    return web.json_response(syncer.get("tools/{}".format(data['name'])))
+    return web.json_response(etcd_client.get("tools/{}".format(data['name'])))
 
 
 @routes.post('/regdata')
 async def register(request):
     data = await request.json()
-    syncer.write("data/{}".format(data['name']), data['url'])
-    return web.json_response(syncer.get("data/{}".format(data['name'])))
+    etcd_client.write("data/{}".format(data['name']), data['url'])
+    return web.json_response(etcd_client.get("data/{}".format(data['name'])))
 
 
 @routes.post('/tooldelete')
 async def register(request):
     data = await request.json()
-    return web.json_response(syncer.delete("tools/{}".format(data['name'])))
+    return web.json_response(etcd_client.delete("tools/{}".format(data['name'])))
 
 
 @routes.post('/datadelete')
 async def register(request):
     data = await request.json()
-    return web.json_response(syncer.delete("data/{}".format(data['name'])))
+    return web.json_response(etcd_client.delete("data/{}".format(data['name'])))
 
 
 @routes.post('/jobdelete')
