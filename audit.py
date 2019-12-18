@@ -5,11 +5,14 @@ import base64
 import configparser
 import os
 import json
+import etcd
 from datetime import datetime
 
 config = configparser.ConfigParser()
 config.read('config.ini')
-
+etcd_host = config['ETCD']['HOST']
+etcd_port = int(config['ETCD']['PORT'])
+client = etcd.Client(host=etcd_host, port=etcd_port)
 
 def decode(csvs):
     # decode csvs
@@ -61,7 +64,7 @@ def submit(tool, audit_id, issuer):
     with open(filenames[-1], 'rb') as f:
         encoded = base64.b64encode(f.read())
     # write entry with encoded payload
-    write("csv/{}/{}".format(audit_id, issuer), '{{"tool":"{}",\
+    client.set("csv/{}/{}".format(audit_id, issuer), '{{"tool":"{}",\
     "timestamp":"{}",\
     "payload":"{}"}}'.format(tool, datetime.now(), encoded))
     return filenames[-1]
