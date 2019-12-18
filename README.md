@@ -87,7 +87,7 @@ Then you can bring up the orchestrator:
 ```
 docker-compose up
 ```
-As this is an early implementation for testing purposes, the configuration parameters for etcd and the orchestrator are hardcoded into the `docker-compose.yml` configuration file. Any changes need to be made there directly.
+Any configuration parameters (eg volume directories) can be changed in `docker-compose.yml`.
 
 # MAOCTL
 
