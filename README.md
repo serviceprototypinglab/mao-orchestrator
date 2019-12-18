@@ -6,7 +6,7 @@ This implementation makes use of an etcd cluster for member discovery and metada
 - [Install instructions](#install-instructions) To setup the orchestrator
 - [Docker-Compose](#docker-compose) An easier alternative to setting it up manually (WIP)
 - [MAOCTL](#maoctl) To interact with the running instance
-- [MAO- Gateway](mao-gateway) A tool that allows external tools to communicate with the cluster (WIP)
+- [MAO- Gateway](#mao-gateway) A tool that allows external tools to communicate with the cluster (WIP)
 - [Tool compliance](#tool-compliance) To create tools that can be deployed to the orchestrator
 
 # Install instructions
@@ -98,7 +98,7 @@ python3 maoctl.py --help
 ```
 to begin.
 
-# MAO - Gateway
+# MAO-Gateway
 This experimental tool is meant to enable external tools to interact with the data in the cluster. It allows external sources to read all entries of the etcd cluster, and also allows them to write short-lived 'raw' entries. Raw entries are picked up by a listener managed by the orchestrator and saved to datasets determined by their key values. The datasets are persistent but the entries themselves have a TTL of 60 seconds.
 
 The gateway uses a database to save the IPs of current nodes in the cluster. It also has a discovery endpoint for joining the cluster, but that is disabled for the time being, as adding a misconfigured node to a small etcd cluster can cause a catastrophic failure.

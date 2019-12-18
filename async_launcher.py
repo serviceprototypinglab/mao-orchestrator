@@ -48,6 +48,11 @@ async def write(request):
     data = await request.json()
     return web.json_response(json.loads(etcd_client.get(data['key'])))
 
+@routes.post('/inspect')
+async def write(request):
+    data = await request.json()
+    return web.json_response(etcd_client.read_recursive(data['key']))
+
 @routes.post('/register')
 async def register(request):
     data = await request.json()
