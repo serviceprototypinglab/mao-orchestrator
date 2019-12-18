@@ -73,24 +73,16 @@ def run_container(container, tool, dataset):
 
 def listen():
     try:
-        directory = etcd_client.get('notifications')
-        qresult = {}
-        for result in directory.children:
-            qresult[result.key] = result.value
-        print(qresult)
+        print(etcd_client.list('notifications'))
         # Send notifications as email
         # Delete notifications
-    except etcd.EtcdKeyNotFound:
-
+    except:
         print("No notifications")
 
 
 def data_listen():
     try:
-        directory = etcd_client.read_recursive('raw')
-        qresult = {}
-        for result in directory.children:
-            qresult[result.key] = result.value
+        qresult = etcd_client.read_recursive('raw')
         print(qresult)
         for key, value in qresult.items():
             dir = config['WORKING_ENVIRONMENT']['importdir'] + '/' + key.split('/')[2]
@@ -101,7 +93,7 @@ def data_listen():
                 os.mkdir(dir)
             with open(filename, 'w') as output:
                 output.write(value)
-    except etcd.EtcdKeyNotFound:
+    except:
         print("No pernding data")
 
 
@@ -142,7 +134,7 @@ def audit_listen():
                     if config.has_option('DATA_REPOS', details['tool']):
                         filename = audit.submit(details['tool'], audit_id, current_user)
                         print("Contributed {} to {}".format(filename, key))
-    except etcd.EtcdKeyNotFound:
+    except:
         print("No on-going audits")
 
 

@@ -39,4 +39,8 @@ def delete_recursive(key):
 
 
 def read_recursive(key):
-    return client.read(key, recursive=True)
+    directory = client.read(key, recursive=True)
+    qresult = {}
+    for result in directory.children:
+        qresult[result.key] = result.value
+    return qresult

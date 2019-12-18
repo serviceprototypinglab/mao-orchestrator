@@ -9,7 +9,7 @@ import base64
 import glob
 from datetime import datetime
 import audit
-from etcd_client import write, list, get, delete
+from etcd_client import write, get
 
 
 config = configparser.ConfigParser()
