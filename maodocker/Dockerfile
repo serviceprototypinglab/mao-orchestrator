@@ -11,4 +11,6 @@ COPY . ./
 
 RUN pip3 install -r requirements.txt
 
-CMD ["python3", "./async_launcher.py"]
+ENTRYPOINT ["sh", "-c"]
+
+CMD ["sh env_to_conf.sh && python3 ./async_launcher.py"]
