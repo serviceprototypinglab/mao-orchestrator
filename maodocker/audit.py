@@ -2,7 +2,24 @@ import csv
 import glob
 import itertools
 import base64
+import configparser
+import os
+import json
+from datetime import datetime
 
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+
+def decode(csvs):
+    # decode csvs
+    for key, value in csvs.items():
+        auditor = key.split('/')[3]
+        payload = json.loads(value)
+        encoded = payload['payload'][2:-1].encode('latin1')
+        decoded = base64.b64decode(encoded)
+        with open(audit_dir + '/' + auditor + '.csv', 'wb') as output:
+            output.write(decoded)
 
 def compare(list1, list2):
     diff = 0
@@ -34,6 +51,42 @@ def compare_csv_list(filenames):
     return output
 
 
+def submit(tool, audit_id, issuer):
+    # find most recent csv
+    path = config['DATA_REPOS'][tool]
+    filenames = glob.glob("{}/*.csv".format(path))
+    filenames.sort()
+    # filenames[-1] is the latest file
+    # if they are named appropriately
+    with open(filenames[-1], 'rb') as f:
+        encoded = base64.b64encode(f.read())
+    # write entry with encoded payload
+    write("csv/{}/{}".format(audit_id, issuer), '{{"tool":"{}",\
+    "timestamp":"{}",\
+    "payload":"{}"}}'.format(tool, datetime.now(), encoded))
+    return filenames[-1]
+
+
+def cleanup():
+    with open('known_audits.json', 'r') as archive:
+        known_audits = json.load(archive)
+        print(known_audits)
+    keys_to_delete = []
+    for key in known_audits:
+        audit_time = datetime.strptime(known_audits[key], "%Y-%m-%d %H:%M:%S.%f")
+        print(audit_time)
+        delta = datetime.now() - audit_time
+        print(delta)
+        if (delta.total_seconds() // 60) % 60 > 10:
+            keys_to_delete.append(key)
+    for key in keys_to_delete:
+        print("Deleting ", key)
+        del known_audits[key]
+    with open('known_audits.json', 'w') as archive:
+        json.dump(known_audits, archive)
+    return known_audits
+
+
 def audit(path):
     print("Finding candidates in directory")
     filenames = glob.glob("{}/*.csv".format(path))
@@ -58,5 +111,33 @@ def audit(path):
     else:
         print("Leader elected as: ", best_nodes)
     for index in range(len(best_nodes)):
-        best_nodes[index] = best_nodes[index].split('/')[-1][0:-4] 
+        best_nodes[index] = best_nodes[index].split('/')[-1][0:-4]
     return(best_nodes)
+
+def validate(details, audit_id):
+    #make temp folder IF not exists
+    audit_dir = config['WORKING_ENVIRONMENT']['auditdir'] + '/' + audit_id
+    if not os.path.isdir(audit_dir):
+        os.mkdir(audit_dir)
+    #get csv entries for this audit
+    files = client.get('csv/{}'.format(audit_id))
+    csvs = {}
+    # retrieve encoded csvs
+    for result in files.children:
+        csvs[result.key] = result.value
+    # decode csvs
+    decode(csvs)
+    #perform validation
+    winner = audit(audit_dir)
+    #announce leader
+    print('##########################')
+    print(audit_id)
+    print(details['tool'])
+    print(details['timestamp'])
+    print(str(winner))
+    client.set("winners/{}".format(audit_id), '{{"tool":"{}",\
+    "timestamp":"{}",\
+    "winner":"{}"}}'.format(details['tool'], details['timestamp'], str(winner)))
+    #delete audit, csvs and temp files
+    client.delete("/csv/{}".format(audit_id), recursive=True)
+    client.delete("/audit/{}".format(audit_id), recursive=True)

@@ -68,7 +68,7 @@ def run_container(container, tool, dataset):
     result = {}
     docker_client.containers.run(container,
                                  volumes={dataset: {'bind': '/usr/src/app/data'}},
-                                 network='mao')
+                                 network='host')
     result = differ.detect(dataset, tool)
     insights.report(dataset, tool, config['WORKING_ENVIRONMENT']['user'])
     return result
@@ -110,69 +110,27 @@ def data_listen():
 
 def audit_listen():
     # delete known audits entries older than 10 minutes
-    with open('known_audits.json', 'r') as archive:
-        known_audits = json.load(archive)
-        print(known_audits)
-    keys_to_delete = []
-    for key in known_audits:
-        audit_time = datetime.strptime(known_audits[key], "%Y-%m-%d %H:%M:%S.%f")
-        print(audit_time)
-        delta = datetime.now() - audit_time
-        print(delta)
-        if (delta.total_seconds() // 60) % 60 > 10:
-            keys_to_delete.append(key)
-    for key in keys_to_delete:
-        print("Deleting ", key)
-        del known_audits[key]
-    with open('known_audits.json', 'w') as archive:
-        json.dump(known_audits, archive)
+    known_audits = audit.cleanup()
     try:
         # get all audits
         directory = client.get('audit')
         audits = {}
+        current_user = config['WORKING_ENVIRONMENT']['user']
         for result in directory.children:
             audits[result.key] = result.value
         for key in audits:
+            audit_id = key.split('/')[2]
             details = json.loads(audits[key])
             print(details)
-            print(config['WORKING_ENVIRONMENT']['user'])
+            print(current_user)
             # check if self is the issuer
-            if details['issuer'] == config['WORKING_ENVIRONMENT']['user']:
+            if details['issuer'] == current_user:
                 # check if 10 minutes have passed
                 audit_time = datetime.strptime(details['timestamp'], "%Y-%m-%d %H:%M:%S.%f")
                 delta = datetime.now() - audit_time
                 if (delta.total_seconds() // 60) % 60 > 10:
                     #if yes, get files, validate, announce leader, delete entries
-                    #make temp folder IF not exists
-                    if not os.path.isdir(config['WORKING_ENVIRONMENT']['auditdir'] + '/' + key.split('/')[2]):
-                        os.mkdir(config['WORKING_ENVIRONMENT']['auditdir'] + '/' + key.split('/')[2])
-                    #get csv entries for this audit
-                    files = client.get('csv/{}'.format(key.split('/')[2]))
-                    csvs = {}
-                    # retrieve encoded csvs
-                    for result in files.children:
-                        csvs[result.key] = result.value
-                    # decode csvs
-                    for key, value in csvs.items():
-                        payload = json.loads(value)
-                        encoded = payload['payload'][2:-1].encode('latin1')
-                        decoded = base64.b64decode(encoded)
-                        with open(config['WORKING_ENVIRONMENT']['auditdir'] + '/' + key.split('/')[2] + '/' + key.split('/')[3] + '.csv', 'wb') as output:
-                            output.write(decoded)
-                    #perform validation
-                    winner = audit.audit(config['WORKING_ENVIRONMENT']['auditdir'] + '/' + key.split('/')[2])
-                    #announce leader
-                    print('##########################')
-                    print(key.split('/')[2])
-                    print(details['tool'])
-                    print(details['timestamp'])
-                    print(str(winner))
-                    client.set("winners/{}".format(key.split('/')[2]), '{{"tool":"{}",\
-                    "timestamp":"{}",\
-                    "winner":"{}"}}'.format(details['tool'], details['timestamp'], str(winner)))
-                    #delete audit, csvs and temp files
-                    client.delete("/csv/{}".format(key.split('/')[2]), recursive=True)
-                    client.delete("/audit/{}".format(key.split('/')[2]), recursive=True)
+                    audit.validate(details, audit_id)
                 else:
                     #if not, wait
                     pass
@@ -185,21 +143,9 @@ def audit_listen():
                         json.dump(known_audits, archive)
                     # send file and save id to known audits
                     if config.has_option('DATA_REPOS', details['tool']):
-                        # find most recent csv
-                        path = config['DATA_REPOS'][details['tool']]
-                        filenames = glob.glob("{}/*.csv".format(path))
-                        filenames.sort()
-                        # filenames[-1] is the latest file
-                        # if they are named appropriately
-                        with open(filenames[-1], 'rb') as f:
-                            encoded = base64.b64encode(f.read())
-                        # write entry with encoded payload
-                        client.set("csv/{}/{}".format(key.split('/')[2], config['WORKING_ENVIRONMENT']['user']), '{{"tool":"{}",\
-                        "timestamp":"{}",\
-                        "payload":"{}"}}'.format(details['tool'], datetime.now(), encoded))
-                        print("Contributed {} to {}".format(filenames[-1], key))
+                        filename = audit.submit(details['tool'], audit_id, current_user)
+                        print("Contributed {} to {}".format(filename, key))
     except etcd.EtcdKeyNotFound:
-
         print("No on-going audits")
 
 

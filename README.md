@@ -4,7 +4,9 @@ Distributed orchestrator for the [MAO-MAO collaborative research](https://mao-ma
 This implementation makes use of an etcd cluster for member discovery and metadata sharing and a simple git interface for cloning data sets.
 ## Contents
 - [Install instructions](#install-instructions) To setup the orchestrator
-- [Using the CLI](#using-the-cli) To interact with the running instance
+- [Docker-Compose](#docker-compose) An easier alternative to setting it up manually (WIP)
+- [MAOCTL](#maoctl) To interact with the running instance
+- [MAO- Gateway](mao-gateway) A tool that allows external tools to communicate with the cluster (WIP)
 - [Tool compliance](#tool-compliance) To create tools that can be deployed to the orchestrator
 
 # Install instructions
@@ -74,106 +76,43 @@ python3 async_launcher.py
 ```
 By default it runs in the foreground so you will need a new terminal.
 
-# Using the CLI
-Interacting with the server is done via **maoctl**.
+# Docker-Compose
+You can also set up the orchestrator with Docker Compose. This option is still at a very early stage and is not considered stable enough for working with the current 'production' cluster, but is a much quicker way of testing and demonstrating the system.
 
-At the top level there are 2 main commands, for interacting with tools or datasets.
+Before bringing up the compose, create a Docker network to house the application. This will allow the tools managed by the orchestrator to connect to the same network:
 ```
-usage: maoctl.py [-h] {tool,dataset} ...
-
-positional arguments:
-  {tool,dataset}  Available commands
-    tool          List, register or run tools
-    dataset       List, register or retrieve dataset
-
-optional arguments:
-  -h, --help      show this help message and exit
+docker network create mao --driver bridge
 ```
-### Interacting with tools
+Then you can bring up the orchestrator:
 ```
-usage: maoctl.py tool [-h] {get,add,run,schedule} ...
-
-positional arguments:
-  {get,add,run,schedule}
-                        Tool-related commands
-    get                 List tools
-    add                 Register a new tool
-    run                 Execute a tool immediately
-    schedule            Schedule a tool to run periodically
-
-optional arguments:
-  -h, --help            show this help message and exit
+docker-compose up
 ```
-#### Register a new tool
-```
-usage: maoctl.py tool add [-h] name author image data_repo code_repo artefact
+As this is an early implementation for testing purposes, the configuration parameters for etcd and the orchestrator are hardcoded into the `docker-compose.yml` configuration file. Any changes need to be made there directly.
 
-positional arguments:
-  name        Name of the tool to register
-  author      Name of the author of the tool
-  image       Docker image with which to invoke the tool
-  data_repo   Associated data repository. Will be cloned on first invocation
-  code_repo   Code repository for the tool's source code
-  artefact    The type of artefact targeted by the tool
+# MAOCTL
 
-optional arguments:
-  -h, --help  show this help message and exit
+The command-line client for the orchestrator can be used for either the native or docker-compose version to interact and issue commands to the orchestrator.
+Use:
 ```
-#### Run a tool immediately
+python3 maoctl.py --help
 ```
-usage: maoctl.py tool run [-h] name
+to begin.
 
-positional arguments:
-  name        Name of the tool to run
+# MAO - Gateway
+This experimental tool is meant to enable external tools to interact with the data in the cluster. It allows external sources to read all entries of the etcd cluster, and also allows them to write short-lived 'raw' entries. Raw entries are picked up by a listener managed by the orchestrator and saved to datasets determined by their key values. The datasets are persistent but the entries themselves have a TTL of 60 seconds.
 
-optional arguments:
-  -h, --help  show this help message and exit
-```
-#### Schedule to run a tool periodically
-```
-usage: maoctl.py tool schedule [-h] name {daily,weekly}
+The gateway uses a database to save the IPs of current nodes in the cluster. It also has a discovery endpoint for joining the cluster, but that is disabled for the time being, as adding a misconfigured node to a small etcd cluster can cause a catastrophic failure.
 
-positional arguments:
-  name            Name of the tool to schedule
-  {daily,weekly}  Execution schedule: daily/weekly
-
-optional arguments:
-  -h, --help      show this help message and exit
+- Set up the DB:
 ```
-### Interacting with datasets
+sh schema.sh
 ```
-usage: maoctl.py dataset [-h] {get,add,clone} ...
-
-positional arguments:
-  {get,add,clone}  Dataset-related commands
-    get            List datasets
-    add            Register a new dataset
-    clone          Clone a dataset
-
-optional arguments:
-  -h, --help       show this help message and exit
+- Make changes to `session.ini` as needed. As the discovery service is not functional, you have to insert the first node into the database manually.
+- Finally, launch the gateway:
 ```
-#### Register a dataset
+python3 gateway.py
 ```
-usage: maoctl.py dataset add [-h] name url
 
-positional arguments:
-  name        Name of the dataset to register
-  url         Github remote to clone the dataset
-
-optional arguments:
-  -h, --help  show this help message and exit
-```
-#### Clone a dataset locally
-```
-usage: maoctl.py dataset clone [-h] name
-
-positional arguments:
-  name        Name of the dataset to retrieve
-
-optional arguments:
-  -h, --help  show this help message and exit
-```
 # Tool Compliance
 To create tools that can be deployed to the MAO Orchestrator they need to comply with the following guidelines:
 - Must be dockerized
@@ -181,6 +120,7 @@ To create tools that can be deployed to the MAO Orchestrator they need to comply
 - Must put their generated data files in the `/usr/src/app/data` folder, as this is the folder mounted to the container.
 - Though this is not enforced, it is recommended that output files are generated in such a way that subsequent runs do not overwrite the data generated previously.
 - Must generate (in the same folder) a file named `control-<value>.csv` with each execution, where `value` should be sortable (for example the current date), in order for the spike detection to work. The file must contain a single numeric value (the control metric).
+- Optionally, the tool can create an `insights.json` file in the same data directory. The file needs to be small and should be limited to useful key insights. The contents of the file are written to etcd directly to become accessible to external tools.
 
 ## The demo tool
 The demo tool creates 3 mock data samples to trigger the spike detection and also shows the basic way to create a compliant tool. You can build it with Docker and register it (with a Github repository for the data, you can use any repository since after cloning it will only add data locally not make any commits) to test the functionality of the orchestrator.

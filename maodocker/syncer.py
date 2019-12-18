@@ -9,6 +9,7 @@ import shutil
 import base64
 import glob
 from datetime import datetime
+import audit
 
 
 config = configparser.ConfigParser()
@@ -161,18 +162,7 @@ def create_audit(tool):
     "timestamp":"{}"}}'.format(issuer, tool, timestamp))
     # Send file if exists
     if config.has_option('DATA_REPOS', tool):
-        # find most recent csv
-        path = config['DATA_REPOS'][tool]
-        filenames = glob.glob("{}/*.csv".format(path))
-        filenames.sort()
-        # filenames[-1] is the latest file
-        # if they are named appropriately
-        with open(filenames[-1], 'rb') as f:
-            encoded = base64.b64encode(f.read())
-        # write entry with encoded payload
-        write("csv/{}/{}".format(audit_id, issuer), '{{"tool":"{}",\
-        "timestamp":"{}",\
-        "payload":"{}"}}'.format(tool, datetime.now(), encoded))
-        return "Created audit {} and submitted file {}".format(audit_id, filenames[-1])
+        filename = audit.submit(tool, audit_id, issuer)
+        return "Created audit {} and submitted file {}".format(audit_id, filename)
     else:
         return "Created audit {}. No local file to submit.".format(audit_id)
