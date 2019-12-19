@@ -42,6 +42,7 @@ pip3 install psycopg2
 
 - **Setup the Job Store database**
 For this example we will create a database called "schedule" owned by a user named "scheduler" with the password "password".
+  - If you do not want to change these settings you can set up the database with the script `schema.sh`
   - Login to psql as the postgres user:
   ```
    sudo -i -u postgres psql
