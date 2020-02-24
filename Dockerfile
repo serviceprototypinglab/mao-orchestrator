@@ -1,10 +1,16 @@
-FROM python:3.7.4-alpine3.10
+FROM ubuntu:18.04
 
-WORKDIR /usr/src/app
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN mkdir data
 
-RUN pip install requests
+RUN apt-get update -y --no-install-recommends &&\
+apt-get install -y git etcd-server etcd-client python3 python3-pip python3-setuptools postgresql python-psycopg2 postgresql-contrib libpq-dev --no-install-recommends
 
-COPY ./test.py ./
+COPY . ./
 
-CMD ["python", "./test.py"]
+RUN pip3 install -r requirements.txt
+
+ENTRYPOINT ["sh", "-c"]
+
+CMD ["sh env_to_conf.sh && python3 ./async_launcher.py"]
