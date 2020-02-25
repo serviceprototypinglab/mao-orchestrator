@@ -14,8 +14,9 @@ logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-def decode(csvs):
+def decode(csvs, audit_id):
     # decode csvs
+    audit_dir = config['WORKING_ENVIRONMENT']['auditdir'] + '/' + audit_id
     for key, value in csvs.items():
         auditor = key.split('/')[3]
         payload = json.loads(value)
@@ -123,13 +124,13 @@ def validate(details, audit_id):
     if not os.path.isdir(audit_dir):
         os.mkdir(audit_dir)
     #get csv entries for this audit
-    files = etcd_client.get('csv/{}'.format(audit_id))
+    files = etcd_client.directory('csv/{}'.format(audit_id))
     csvs = {}
     # retrieve encoded csvs
     for result in files.children:
         csvs[result.key] = result.value
     # decode csvs
-    decode(csvs)
+    decode(csvs, audit_id)
     #perform validation
     winner = audit(audit_dir)
     #announce leader

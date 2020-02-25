@@ -109,7 +109,7 @@ def audit_listen():
     known_audits = audit.cleanup()
     try:
         # get all audits
-        directory = etcd_client.get('audit')
+        directory = etcd_client.directory('audit')
         audits = {}
         current_user = config['WORKING_ENVIRONMENT']['user']
         for result in directory.children:
@@ -120,7 +120,7 @@ def audit_listen():
             print(details)
             logging.debug(details)
             print(current_user)
-            logging.debug(current_usert)
+            logging.debug(current_user)
             # check if self is the issuer
             if details['issuer'] == current_user:
                 # check if 10 minutes have passed

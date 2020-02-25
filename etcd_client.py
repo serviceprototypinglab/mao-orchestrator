@@ -47,3 +47,7 @@ def read_recursive(key):
     for result in directory.children:
         qresult[result.key] = result.value
     return qresult
+
+
+def directory(key):
+    return client.read(key, recursive=True)
