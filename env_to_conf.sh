@@ -12,4 +12,4 @@ echo "[WORKING_ENVIRONMENT]\n"\
 "password = $password\n"\
 "db = $db\n"\
 "host = $dbhost\n\n"\
-"[DATA_REPOS]" >> config.ini
+"[DATA_REPOS]" > config.ini

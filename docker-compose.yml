@@ -3,7 +3,6 @@ services:
   # The orchestrator
   mao1:
     build: .
-    container_name: "mao1"
     environment:
       # Directory to be used for storing datasets
       - importdir=/home/panos/testconfig
@@ -33,7 +32,6 @@ services:
   # The jobstore for scheduling crawlers and etcd listeners
   db:
     image: "postgres"
-    container_name: "db"
     environment:
       - POSTGRES_USER=scheduler
       - POSTGRES_PASSWORD=password
@@ -47,7 +45,6 @@ services:
   # The etcd node
   etcd:
     image: quay.io/coreos/etcd
-    container_name: "etcd"
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
       # The name this node will be added to the cluster with
