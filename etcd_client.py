@@ -1,7 +1,8 @@
 import etcd
 import configparser
+import logging
 
-
+logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
 config.read('config.ini')
 etcd_host = config['ETCD']['HOST']
@@ -12,8 +13,10 @@ client = etcd.Client(host=etcd_host, port=etcd_port)
 def write(key, value, ephemeral=False):
     if not ephemeral:
         client.set(key, value)
+        logging.info(f"etcd key {key} has been set to {value}")
     else:
         client.set(key, value, ttl=60)
+        logging.info(f"etcd key {key} has been set to {value} with a 60 TTL")
 
 
 def list(key):

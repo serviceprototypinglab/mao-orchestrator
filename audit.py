@@ -5,8 +5,14 @@ import base64
 import os
 import json
 import etcd_client
+import logging
+import configparser
 from datetime import datetime
 
+
+logging.basicConfig(level=logging.DEBUG)
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 def decode(csvs):
     # decode csvs
@@ -33,7 +39,7 @@ def compare_csv_list(filenames):
     for item in filenames:
         output[item] = 0
     for pair in itertools.permutations(filenames, 2):
-        print("Comparing {} and {}".format(pair[0], pair[1]))
+        logging.debug("Comparing {} and {}".format(pair[0], pair[1]))
         with open(pair[0], 'r') as fil:
             reader1 = csv.reader(fil)
             for row in reader1:
@@ -67,17 +73,17 @@ def submit(tool, audit_id, issuer):
 def cleanup():
     with open('known_audits.json', 'r') as archive:
         known_audits = json.load(archive)
-        print(known_audits)
+        logging.debug(known_audits)
     keys_to_delete = []
     for key in known_audits:
         audit_time = datetime.strptime(known_audits[key], "%Y-%m-%d %H:%M:%S.%f")
-        print(audit_time)
+        logging.debug(audit_time)
         delta = datetime.now() - audit_time
-        print(delta)
+        logging.debug(delta)
         if (delta.total_seconds() // 60) % 60 > 10:
             keys_to_delete.append(key)
     for key in keys_to_delete:
-        print("Deleting ", key)
+        logging.debug("Deleting ", key)
         del known_audits[key]
     with open('known_audits.json', 'w') as archive:
         json.dump(known_audits, archive)
@@ -85,28 +91,28 @@ def cleanup():
 
 
 def audit(path):
-    print("Finding candidates in directory")
+    logging.info("Finding candidates in directory")
     filenames = glob.glob("{}/*.csv".format(path))
-    print("Candidates: ", filenames)
+    logging.info("Candidates: ", filenames)
     # Compare candidates to each other and sum the different lines
-    print("For each candidate sum the number of different lines with each other candidate")
+    logging.info("For each candidate sum the number of different lines with each other candidate")
     output = compare_csv_list(filenames)
-    print("Difference index per candidate: ", output)
+    logging.info("Difference index per candidate: ", output)
     # Find the candidates with the minimum sum
-    print("If there is a draw, the candidates with the minimum sum proceed to second round")
+    logging.info("If there is a draw, the candidates with the minimum sum proceed to second round")
 
     best_nodes = [key for key in output if output[key] == min(output.values())]
     if len(best_nodes) > 1:
-        print("Candidates in second round: ", best_nodes)
-        print("If the recond round candidates are identical we can accept them")
+        logging.info("Candidates in second round: ", best_nodes)
+        logging.info("If the recond round candidates are identical we can accept them")
         # If all the best candidates are identical we can automatically accept them as valid
         if max(compare_csv_list(best_nodes).values()) == 0:
-            print("Best candidates are identical, elected leaders: ", best_nodes)
+            logging.info("Best candidates are identical, elected leaders: {}".format(best_nodes))
         else:
             # Else we cannot know if they are valid
-            print("Best candidates are not identical, manual decision required")
+            logging.info("Best candidates are not identical, manual decision required")
     else:
-        print("Leader elected as: ", best_nodes)
+        logging.info("Leader elected as: {}".format(best_nodes))
     for index in range(len(best_nodes)):
         best_nodes[index] = best_nodes[index].split('/')[-1][0:-4]
     return(best_nodes)
@@ -127,11 +133,10 @@ def validate(details, audit_id):
     #perform validation
     winner = audit(audit_dir)
     #announce leader
-    print('##########################')
-    print(audit_id)
-    print(details['tool'])
-    print(details['timestamp'])
-    print(str(winner))
+    logging.info(audit_id)
+    logging.info(details['tool'])
+    logging.info(details['timestamp'])
+    logging.info(str(winner))
     etcd_client.write("winners/{}".format(audit_id), '{{"tool":"{}",\
     "timestamp":"{}",\
     "winner":"{}"}}'.format(details['tool'], details['timestamp'], str(winner)))

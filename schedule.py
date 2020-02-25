@@ -8,6 +8,7 @@ import json
 import base64
 import glob
 import os
+import logging
 import insights
 from datetime import datetime
 
@@ -27,6 +28,8 @@ if config.has_section('POSTGRES') and config['POSTGRES']['DB'] != '':
                                                    postgres_host, postgres_db)
     scheduler.add_jobstore('sqlalchemy', url=url)
     jobstore = True
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 scheduler.start()
 
 
@@ -74,16 +77,19 @@ def run_container(container, tool, dataset):
 def listen():
     try:
         print(etcd_client.list('notifications'))
+        logging.info(etcd_client.list('notifications'))
         # Send notifications as email
         # Delete notifications
     except:
         print("No notifications")
+        logging.info("No notifications")
 
 
 def data_listen():
     try:
         qresult = etcd_client.read_recursive('raw')
         print(qresult)
+        logging.info(qresult)
         for key, value in qresult.items():
             dir = config['WORKING_ENVIRONMENT']['importdir'] + '/' + key.split('/')[2]
             filename = dir + '/' + key.split('/')[3] + '.json'
@@ -95,6 +101,7 @@ def data_listen():
                 output.write(value)
     except:
         print("No pernding data")
+        logging.info("No pending data")
 
 
 def audit_listen():
@@ -111,7 +118,9 @@ def audit_listen():
             audit_id = key.split('/')[2]
             details = json.loads(audits[key])
             print(details)
+            logging.debug(details)
             print(current_user)
+            logging.debug(current_usert)
             # check if self is the issuer
             if details['issuer'] == current_user:
                 # check if 10 minutes have passed
@@ -134,8 +143,10 @@ def audit_listen():
                     if config.has_option('DATA_REPOS', details['tool']):
                         filename = audit.submit(details['tool'], audit_id, current_user)
                         print("Contributed {} to {}".format(filename, key))
+                        logging.info("Contributed {} to {}".format(filename, key))
     except:
         print("No on-going audits")
+        logging.info("No on-going audits")
 
 
 def list_jobs():

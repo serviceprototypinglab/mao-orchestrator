@@ -22,7 +22,7 @@ services:
       # Mount the host's Docker socket
       - /var/run/docker.sock:/var/run/docker.sock
       # Mount the data directories from the config file
-      - /home/panos/newconfig:/home/panos/newconfig
+      - /home/panos/testconfig:/home/panos/testconfig
       - /home/panos/audit_temp:/home/panos/audit_temp
     networks:
         - mao

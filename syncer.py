@@ -9,9 +9,10 @@ import base64
 import glob
 from datetime import datetime
 import audit
+import logging
 from etcd_client import write, get
 
-
+logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
 config.read('config.ini')
 importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
@@ -100,6 +101,7 @@ def retrieve(name):
         git.Repo.clone_from(value, importdir + "/" + name)
         if not config.has_option('DATA_REPOS', name):
             print("Updating config")
+            logging.info("updating config")
             if not config.has_section('DATA_REPOS'):
                 config.add_section('DATA_REPOS')
             config.set('DATA_REPOS', name, importdir + "/" + name)
@@ -108,6 +110,7 @@ def retrieve(name):
         return "Cloned: {} to {}".format(value, importdir + "/" + name)
     except:
         print("Error cloning data, trying to pull")
+        logging.warning("Error cloning data, trying to pull")
     try:
         repo = git.Repo(importdir + "/" + name)
         o = repo.remotes.origin
@@ -122,6 +125,7 @@ def retrieve(name):
         return "Pulled: {} to {}".format(value, importdir + "/" + name)
     except:
         print("Error pulling data.")
+        logging.error("Error retrieving data.")
         return "Error pulling data."
 
 

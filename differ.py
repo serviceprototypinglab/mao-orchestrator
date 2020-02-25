@@ -3,16 +3,21 @@ import glob
 import sys
 import etcd_client
 import datetime
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 def detect(path, name):
     result = {}
     print("Data path:")
     print(path)
+    logging.debug(f"Data path: {path}")
     result['datapath'] = path
     filenames = glob.glob("{}/control-*.csv".format(path))
     filenames.sort()
-    print("Number of data snapshots: ", len(filenames))
+    logging.debug("Number of data snapshots: {}".format(len(filenames)))
     result['snapshots'] = len(filenames)
     if len(filenames) > 2:
         control = []
@@ -23,28 +28,28 @@ def detect(path, name):
                 row = next(iterrows)
                 control.append(row[0])
         avg = (int(control[0]) + int(control[1]))/2
-        print("Current rolling average: ", avg)
+        logging.debug("Current rolling average: {}".format(avg))
         result['rolling_avg'] = avg
-        print("Current value of control metric: " + control[2])
+        logging.debug("Current value of control metric: {}".format(control[2]))
         result['control_metric'] = control[2]
-        print("Absolute difference from rolling average: ", int(control[2])-avg)
+        logging.debug("Absolute difference from rolling average: {}".format(int(control[2])-avg))
         result['diff'] = int(control[2])-avg
         gain = (((int(control[2])/avg))-1)*100
-        print("Gain: ", round(gain, 2), "%")
+        logging.debug("Gain: {}%".format(round(gain, 2)))
         result['gain'] = gain
         if gain > 6 or gain < -6:
-            print("Data has spiked.")
+            logging.debug("Data has spiked.")
             result['spike'] = True
             etcd_client.write('notifications/' + str(datetime.datetime.now()), name)
-            print("Notification entry writen to cluster.")
-            print(etcd_client.list('notifications'))
+            logging.debug("Notification entry writen to cluster.")
+            logging.debug(etcd_client.list('notifications'))
             return result
         else:
-            print("Gain within expected margin")
+            logging.debug("Gain within expected margin")
             result['spike'] = False
             return result
     else:
-        print("Insufficient data for running average")
+        logging.debug("Insufficient data for running average")
         result['spike'] = False
         return result
 
