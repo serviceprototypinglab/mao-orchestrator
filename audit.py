@@ -34,24 +34,17 @@ def compare(list1, list2):
 
 
 def compare_csv_list(filenames):
-    input1 = []
-    input2 = []
+    input = []
     output = {}
     for item in filenames:
         output[item] = 0
     for pair in itertools.permutations(filenames, 2):
         logging.debug("Comparing {} and {}".format(pair[0], pair[1]))
-        with open(pair[0], 'r') as fil:
-            reader1 = csv.reader(fil)
-            for row in reader1:
-                input1.append(row)
-        with open(pair[1], 'r') as fil:
-            reader1 = csv.reader(fil)
-            for row in reader1:
-                input2.append(row)
-        output[pair[0]] += compare(input1, input2)
-        input1 = []
-        input2 = []
+        for file in pair:
+            with open (file, 'r') as f:
+                input.append(list(row for row in csv.reader(f)))
+        output[pair[0]] += compare(input[0], input[1])
+        input = []
     return output
 
 
