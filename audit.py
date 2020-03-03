@@ -41,10 +41,11 @@ def compare_csv_list(filenames):
     for pair in itertools.permutations(filenames, 2):
         logging.debug("Comparing {} and {}".format(pair[0], pair[1]))
         for file in pair:
-            with open (file, 'r') as f:
+            with open(file, 'r') as f:
                 input.append(list(row for row in csv.reader(f)))
         output[pair[0]] += compare(input[0], input[1])
         input = []
+    logging.debug(output)
     return output
 
 
