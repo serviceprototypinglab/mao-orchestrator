@@ -18,6 +18,9 @@ services:
       - dbhost=db
     ports:
       - "8080:8080"
+    volumes:
+      # Mount the host's Docker socket
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
         - mao
     depends_on:
