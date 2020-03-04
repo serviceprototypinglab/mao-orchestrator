@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 
-def detect(path, name):
+def diff(path, name):
     result = {}
     print("Data path:")
     print(path)
@@ -40,9 +40,6 @@ def detect(path, name):
         if gain > 6 or gain < -6:
             logging.debug("Data has spiked.")
             result['spike'] = True
-            etcd_client.write('notifications/' + str(datetime.datetime.now()), name)
-            logging.debug("Notification entry writen to cluster.")
-            logging.debug(etcd_client.list('notifications'))
             return result
         else:
             logging.debug("Gain within expected margin")
@@ -54,8 +51,11 @@ def detect(path, name):
         return result
 
 
-if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print("Missing path to control data and/or name of dataset")
-    else:
-        detect(sys.argv[1], sys.argv[2])
+def detect(path, name):
+    result = diff(path, name)
+    if result['spike']:
+        etcd_client.write('notifications/' + str(datetime.datetime.now()), name)
+        logging.debug("Notification entry writen to cluster.")
+        logging.debug(etcd_client.list('notifications'))
+    return result
+
