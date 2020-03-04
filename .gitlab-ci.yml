@@ -8,7 +8,7 @@ stages:
 test1:
   stage: test1
   script:
-    - python3.6 unittest test_differ.py test_audit.py
+    - python3.6 -m unittest test_differ.py test_audit.py
 
 build1:
   stage: build1
