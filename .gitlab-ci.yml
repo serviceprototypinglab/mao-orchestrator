@@ -19,9 +19,7 @@ build1:
 scan:
   stage: scan
   script:
-    - curl -s -L \
-      https://raw.githubusercontent.com/simonsdave/clair-cicd/master/bin/assess-image-risk.sh | \
-      bash -s -- -v panosece/orchestrator
+    - curl -s -L https://raw.githubusercontent.com/simonsdave/clair-cicd/master/bin/assess-image-risk.sh | bash -s -- panosece/orchestrator
 
 build2:
   stage: build2
