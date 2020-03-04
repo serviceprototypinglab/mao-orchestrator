@@ -30,12 +30,12 @@ async def datasets(request):
 
 @routes.get('/locallist')
 async def datasets(request):
-    return web.json_response(etcd_client.list_local())
+    return web.json_response(syncer.list_local())
 
 
 @routes.get('/jobslist')
 async def datasets(request):
-    return web.json_response(etcd_client.list_jobs())
+    return web.json_response(syncer.list_jobs())
 
 @routes.post('/write')
 async def write(request):
