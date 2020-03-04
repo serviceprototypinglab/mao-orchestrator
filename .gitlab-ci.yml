@@ -1,0 +1,33 @@
+stages:
+  - test1
+  - build1
+  - scan
+  - build2
+  - test2
+
+test1:
+  stage: test1
+  script:
+    - python3.6 unittest test_differ.py test_audit.py
+
+build1:
+  stage: build1
+  script:
+    - docker build -t panosece/orchestrator .
+
+scan:
+  stage: scan
+  script:
+    - curl -s -L \
+      https://raw.githubusercontent.com/simonsdave/clair-cicd/master/bin/assess-image-risk.sh | \
+      bash -s -- -v panosece/orchestrator
+
+build2:
+  stage: build2
+  script:
+    - docker-compose up -d
+
+test2:
+  stage: test2
+  script:
+    - python3.6 -m unittest test_client.py
