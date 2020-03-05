@@ -2,6 +2,8 @@
 
 The implementation of dataset management within the MAO Orchestrator is based on git repositories. Datasets can be registered to the cluster, making them known to all members, and from that point on a member can clone them onto their system.
 
+
+
 ## Getting information
 
 You can request a list of datasets, or information on a single dataset.
@@ -12,31 +14,7 @@ You can request a list of datasets, or information on a single dataset.
 python maoctl.py dataset get
 ```
 ```
-python maoctl.py dataset get <dataset>
-```
-
-### API
-
-```
-GET /datasets
-```
-#### Sample response
-
-```
-['data/dataset1','data/dataset2']
-```
----
-```
-GET /datasets/<dataset>
-```
-#### Arguments
-
-- **dataset**: The name of the dataset
-
-#### Sample response
-
-```
-"https://gitihub.com/foo/bar"
+python maoctl.py dataset get <name>
 ```
 
 ## Register a dataset
@@ -48,28 +26,6 @@ Registering a dataset creates a new entry in etcd, letting all cluster members k
 python maoctl.py dataset add <name> <url>
 ```
 
-### API
-
-```
-POST /regdata
-```
-#### Sample request
-```
-{
-  "name": name,
-  "url": url
-}
-```
-#### Arguments
-
-- **name**: The name of the dataset
-- **url**: The URL of the dataset's git repo
-
-#### Sample response
-
-```
-"https://gitihub.com/foo/bar"
-```
 ## Un-register a dataset
 
 Unregistering a dataset will remove it from etcd.
@@ -79,21 +35,6 @@ Unregistering a dataset will remove it from etcd.
 python maoctl.py dataset remove <name>
 ```
 
-### API
-
-```
-POST /datadelete
-```
-#### Sample request
-```
-{
-  "name": name,
-}
-```
-#### Arguments
-
-- **name**: The name of the dataset
-
 ## List local datasets
 
 List the datasets that have been cloned to the local filesystem.
@@ -102,17 +43,18 @@ List the datasets that have been cloned to the local filesystem.
 ```
 python maoctl.py dataset list-local
 ```
+## Clone a registered dataset
 
-### API
+This will clone the specified dataset to the import directory set in the configuration file.
 
+### CLI
 ```
-GET /locallist
+python maoctl.py dataset clone <name>
 ```
-#### Sample response
+## Delete a cloned dataset
 
+Delete a cloned dataset from the local filesystem.
+### CLI
 ```
-{
-  'dataset1': '/path/to/dataset1',
-  'dataset2': '/path/to/dataset2'
-}
+python maoctl.py dataset remove-local <name>
 ```
