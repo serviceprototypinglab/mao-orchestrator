@@ -8,32 +8,32 @@ app = web.Application()
 routes = web.RouteTableDef()
 
 
-@routes.get('/regtools')
+@routes.get('/registry/tools')
 async def regtools(request):
     return web.json_response(etcd_client.list('tools'))
 
 
-@routes.get('/regtools/{tool}')
+@routes.get('/registry/tools/{tool}')
 async def regtools(request):
     return web.json_response(etcd_client.get('tools/' + request.match_info['tool']))
 
 
-@routes.get('/datasets')
+@routes.get('/registry/datasets')
 async def datasets(request):
     return web.json_response(etcd_client.list('data'))
 
 
-@routes.get('/datasets/{dataset}')
+@routes.get('/registry/datasets/{dataset}')
 async def datasets(request):
     return web.json_response(etcd_client.get('data/' + request.match_info['dataset']))
 
 
-@routes.get('/locallist')
+@routes.get('/files')
 async def datasets(request):
     return web.json_response(syncer.list_local())
 
 
-@routes.get('/jobslist')
+@routes.get('/jobs')
 async def datasets(request):
     return web.json_response(syncer.list_jobs())
 
@@ -53,7 +53,7 @@ async def write(request):
     data = await request.json()
     return web.json_response(etcd_client.read_recursive(data['key']))
 
-@routes.post('/register')
+@routes.post('/registry/tools')
 async def register(request):
     data = await request.json()
     etcd_client.write("tools/{}".format(data['name']),
@@ -68,35 +68,31 @@ async def register(request):
     return web.json_response(etcd_client.get("tools/{}".format(data['name'])))
 
 
-@routes.post('/regdata')
+@routes.post('/registry/datasets')
 async def register(request):
     data = await request.json()
     etcd_client.write("data/{}".format(data['name']), data['url'])
     return web.json_response(etcd_client.get("data/{}".format(data['name'])))
 
 
-@routes.post('/tooldelete')
+@routes.delete('/registry/tools/{tool}')
 async def register(request):
-    data = await request.json()
-    return web.json_response(etcd_client.delete("tools/{}".format(data['name'])))
+    return web.json_response(etcd_client.delete("tools/{}".format(request.match_info['tool'])))
 
 
-@routes.post('/datadelete')
+@routes.delete('/registry/datasets/{dataset}')
 async def register(request):
-    data = await request.json()
-    return web.json_response(etcd_client.delete("data/{}".format(data['name'])))
+    return web.json_response(etcd_client.delete("data/{}".format(request.match_info['dataset'])))
 
 
-@routes.post('/jobdelete')
+@routes.delete('/jobs/{id}')
 async def register(request):
-    data = await request.json()
-    return web.json_response(syncer.remove_job(data['id']))
+    return web.json_response(syncer.remove_job(request.match_info['id']))
 
 
-@routes.post('/localdelete')
+@routes.delete('/files/{name}')
 async def register(request):
-    data = await request.json()
-    return web.json_response(syncer.remove_local(data['name']))
+    return web.json_response(syncer.remove_local(request.match_info['name']))
 
 
 @routes.post('/audit')
@@ -105,14 +101,14 @@ async def register(request):
     return web.json_response(syncer.create_audit(data['name']))
 
 
-@routes.post('/retrieve')
+@routes.get('/files/clone/{dataset}')
 async def retrieve(request):
-    data = await request.json()
-    response = syncer.retrieve(data['name'])
+    dataset = request.match_info['dataset']
+    response = syncer.retrieve(dataset)
     return web.json_response(response)
 
 
-@routes.post("/run")
+@routes.post("/jobs")
 async def run(request):
     data = await request.json()
     print(data)

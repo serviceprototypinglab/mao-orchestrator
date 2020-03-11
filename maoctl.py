@@ -4,29 +4,29 @@ import requests
 
 def get_tools(*args):
     if len(args) == 0:
-        r = requests.get('http://0.0.0.0:8080/regtools')
+        r = requests.get('http://0.0.0.0:8080/registry/tools')
         print(r.json())
     else:
-        r = requests.get('http://0.0.0.0:8080/regtools/' + args[0])
+        r = requests.get('http://0.0.0.0:8080/registry/tools/' + args[0])
         print(r.json())
 
 
 def get_datasets(*args):
     if len(args) == 0:
-        r = requests.get('http://0.0.0.0:8080/datasets')
+        r = requests.get('http://0.0.0.0:8080/registry/datasets')
         print(r.json())
     else:
-        r = requests.get('http://0.0.0.0:8080/datasets/' + args[0])
+        r = requests.get('http://0.0.0.0:8080/registry/datasets/' + args[0])
         print(r.json())
 
 
 def list_scheduled():
-    r = requests.get('http://0.0.0.0:8080/jobslist')
+    r = requests.get('http://0.0.0.0:8080/jobs')
     print(r.json())
 
 
 def list_local():
-    r = requests.get('http://0.0.0.0:8080/locallist')
+    r = requests.get('http://0.0.0.0:8080/files')
     print(r.json())
 
 
@@ -37,7 +37,7 @@ def add_dataset(name, url):
     "name": name,
     "url": url
     }
-    r = requests.post('http://0.0.0.0:8080/regdata', json=json_out)
+    r = requests.post('http://0.0.0.0:8080/registry/datasets', json=json_out)
     print(r.json())
 
 
@@ -50,47 +50,32 @@ def add_tool(name, author, image, data_repo, code_repo, artefact):
     "code_repo": code_repo,
     "artefact": artefact
     }
-    r = requests.post('http://0.0.0.0:8080/register', json=json_out)
+    r = requests.post('http://0.0.0.0:8080/registry/tools', json=json_out)
     print(r.json())
 
 
 def clone_dataset(name):
-    json_out = {
-    "name": name
-    }
-    r = requests.post('http://0.0.0.0:8080/retrieve', json=json_out)
+    r = requests.get('http://0.0.0.0:8080/files/clone/' + name)
     print(r.json())
 
 
 def remove_tool(name):
-    json_out = {
-    "name": name
-    }
-    r = requests.post('http://0.0.0.0:8080/tooldelete', json=json_out)
+    r = requests.delete('http://0.0.0.0:8080/registry/tools/' + name)
     print(r.json())
 
 
 def remove_dataset(name):
-    json_out = {
-    "name": name
-    }
-    r = requests.post('http://0.0.0.0:8080/datadelete', json=json_out)
+    r = requests.delete('http://0.0.0.0:8080/registry/datasets/' + name)
     print(r.json())
 
 
 def stop(id):
-    json_out = {
-    "id": id
-    }
-    r = requests.post('http://0.0.0.0:8080/jobdelete', json=json_out)
+    r = requests.delete('http://0.0.0.0:8080/jobs/' + id)
     print(r.json())
 
 
 def remove_local(name):
-    json_out = {
-    "name": name
-    }
-    r = requests.post('http://0.0.0.0:8080/localdelete', json=json_out)
+    r = requests.delete('http://0.0.0.0:8080/files/' + name)
     print(r.json())
 
 
@@ -107,7 +92,7 @@ def run_tool(name):
     "name": name,
     "cron":False
     }
-    r = requests.post('http://0.0.0.0:8080/run', json=json_out)
+    r = requests.post('http://0.0.0.0:8080/jobs', json=json_out)
     response = r.json()
     print("Report:")
     print("Tool image: " + response['tool'])
@@ -137,7 +122,7 @@ def schedule_tool(name, frequency):
     "cron": True,
     "frequency": frequency
     }
-    r = requests.post('http://0.0.0.0:8080/run', json=json_out)
+    r = requests.post('http://0.0.0.0:8080/jobs', json=json_out)
     response = r.json()
     print("Report:")
     print("Tool image: " + response['tool'])
