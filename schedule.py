@@ -1,4 +1,5 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 import differ
 import docker
 import configparser
@@ -36,6 +37,8 @@ scheduler.start()
 def schedule_run(data):
     #data = request.get_json()
     response = {}
+    env = {}
+    command = []
     container = data['container']
     response['container'] = container
     print(container)
@@ -45,28 +48,37 @@ def schedule_run(data):
     dataset = data['dataset']
     response['dataset'] = dataset
     print(dataset)
+    if 'env' in data:
+        env = data['env']
+    if 'command' in data:
+        command = data['command']
     if data['cron']:
         freq = data['freq']
         if freq == 'daily':
             job = scheduler.add_job(run_container, 'interval', days=1,
-                                    args=[container, tool, dataset], id=tool,
+                                    args=[container, command, env, tool, dataset], id=tool,
                                     replace_existing=True,
                                     misfire_grace_time=3600, coalesce=True)
         elif freq == 'weekly':
             job = scheduler.add_job(run_container, 'interval', weeks=1,
-                                    args=[container, tool, dataset], id=tool,
+                                    args=[container, command, env, tool, dataset], id=tool,
+                                    replace_existing=True,
+                                    misfire_grace_time=3600, coalesce=True)
+        else:
+            job = scheduler.add_job(run_container, CronTrigger.from_crontab(freq),
+                                    args=[container, command, env, tool, dataset], id=tool,
                                     replace_existing=True,
                                     misfire_grace_time=3600, coalesce=True)
         response['job'] = job.id
         return response
     else:
-        response['exec_result'] = run_container(container, tool, dataset)
+        response['exec_result'] = run_container(container, command, env, tool, dataset)
         return response
 
 
-def run_container(container, tool, dataset):
+def run_container(container, command, env, tool, dataset):
     result = {}
-    docker_client.containers.run(container,
+    docker_client.containers.run(container, command=command, environment=env,
                                  volumes={dataset: {'bind': '/usr/src/app/data'}},
                                  network='host')
     result = differ.detect(dataset, tool)

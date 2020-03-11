@@ -57,7 +57,7 @@ python maoctl.py tool remove <name>
 Jobs are handled by an APScheduler asyncio process pool instance with a PostgreSQL back-end. They can be run immediately or be scheduled to run daily or weekly.
 
 ##### Note:
-Currently cron-like syntax is not supported for scheduling in the CLI or API but this is subject to change as the scheduler supports it.
+Check the advanced section if you wish to use crontab-like syntax.
 
 ### List pending jobs
 List the currently scheduled jobs. This will also display information on the listener jobs that are spawned automatically when the orchestrator starts.
@@ -102,3 +102,8 @@ A scheduled tool can also be un-scheduled.
 ```
 python maoctl.py tool stop <name>
 ```
+## Advanced
+### Custom Docker parameters
+You can specify a command to run inside the tool container and a set of environment variables by setting the optional `command` (list) and `env` (dict) parameters respectively in the run/schedule request. This is possible **only** via the API.
+### Crontab syntax for scheduler
+You can use crontab syntax for the frequency parameter of the scheduler request. This is possible both through the CLI and API.

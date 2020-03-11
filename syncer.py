@@ -31,6 +31,8 @@ def remove_job(id):
 def sync(data):
     # Use new scheduler
     response = {}
+    command = []
+    env = {}
     blob = get('tools/{}'.format(data['name']))
     payload = json.loads(blob)
     tool = payload['image']
@@ -39,6 +41,10 @@ def sync(data):
     dataset = importdir + "/" + data['name']
     print("Data directory: " + dataset)
     response['datadir'] = dataset
+    if 'env' in data:
+        env = data['env']
+    if 'command' in data:
+        command = data['command']
     # Check if dataset has been cloned already
     if not config.has_option('DATA_REPOS', data['name']):
         # Clone dataset
@@ -61,14 +67,18 @@ def sync(data):
             "tool": data['name'],
             "dataset": dataset,
             "cron": data['cron'],
-            "freq": freq
+            "freq": freq,
+            "command": command,
+            "env": env
         }
     else:
         json_out = {
             "container": tool,
             "tool": data['name'],
             "dataset": dataset,
-            "cron": data['cron']
+            "cron": data['cron'],
+            "command": command,
+            "env": env
         }
     print("Message to scheduler: " + json.dumps(json_out))
     response['message'] = json.dumps(json_out)
