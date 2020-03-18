@@ -21,6 +21,7 @@ class Arguments:
         # TODO: run/sechedule tool
         run_tools = tool_parsers.add_parser('run', help="Execute a tool immediately")
         run_tools.add_argument('name', help="Name of the tool to run")
+        run_tools.add_argument('--renku', help="Renku project to use for this run")
 
         scheduled_tools = tool_parsers.add_parser('list-scheduled', help="List scheduled jobs")
 
@@ -33,6 +34,7 @@ class Arguments:
         schedule_tools = tool_parsers.add_parser('schedule', help="Schedule a tool to run periodically")
         schedule_tools.add_argument('name', help="Name of the tool to schedule")
         schedule_tools.add_argument('frequency', help="Execution schedule: daily/weekly/cron")
+        schedule_tools.add_argument('--renku', help="Renku project to use for this job")
 
         parser_dataset = subparsers.add_parser('dataset', help="List, register or retrieve dataset")
         dataset_parsers = parser_dataset.add_subparsers(help="Dataset-related commands", dest='dataset')

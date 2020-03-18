@@ -115,6 +115,16 @@ def run_tool(name):
         print("No data anomalies detected")
 
 
+def renku_run(name, renku):
+    json_out = {
+    "name": name,
+    "cron":False,
+    "renku": renku
+    }
+    r = requests.post('http://0.0.0.0:8080/jobs', json=json_out)
+    response = r.json()
+    print(response)
+
 
 def schedule_tool(name, frequency):
     json_out = {
@@ -149,7 +159,10 @@ if __name__ == '__main__':
             add_tool(args.name, args.author, args.image, args.data_repo,
                      args.code_repo,args.artefact)
         elif args.tool == 'run':
-            run_tool(args.name)
+            if args.renku:
+                renku_run(args.tool, args.renku)
+            else:
+                run_tool(args.name)
         elif args.tool == 'schedule':
             schedule_tool(args.name, args.frequency)
         elif args.tool == 'remove':

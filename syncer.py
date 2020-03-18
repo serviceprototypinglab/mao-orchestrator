@@ -33,6 +33,7 @@ def sync(data):
     response = {}
     command = []
     env = {}
+    renku = False
     blob = get('tools/{}'.format(data['name']))
     payload = json.loads(blob)
     tool = payload['image']
@@ -45,6 +46,9 @@ def sync(data):
         env = data['env']
     if 'command' in data:
         command = data['command']
+    if 'renku' in data:
+        renku = True
+        payload['data_repo'] = data['renku']
     # Check if dataset has been cloned already
     if not config.has_option('DATA_REPOS', data['name']):
         # Clone dataset
@@ -69,7 +73,8 @@ def sync(data):
             "cron": data['cron'],
             "freq": freq,
             "command": command,
-            "env": env
+            "env": env,
+            "renku": renku
         }
     else:
         json_out = {
@@ -78,7 +83,8 @@ def sync(data):
             "dataset": dataset,
             "cron": data['cron'],
             "command": command,
-            "env": env
+            "env": env,
+            "renku": renku
         }
     print("Message to scheduler: " + json.dumps(json_out))
     response['message'] = json.dumps(json_out)

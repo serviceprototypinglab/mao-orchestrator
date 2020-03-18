@@ -11,6 +11,8 @@ import glob
 import os
 import logging
 import insights
+import git
+import subprocess
 from datetime import datetime
 
 
@@ -39,6 +41,7 @@ def schedule_run(data):
     response = {}
     env = {}
     command = []
+    renku = False
     container = data['container']
     response['container'] = container
     print(container)
@@ -52,38 +55,82 @@ def schedule_run(data):
         env = data['env']
     if 'command' in data:
         command = data['command']
+    if data['renku']:
+        renku = True
     if data['cron']:
         freq = data['freq']
         if freq == 'daily':
             job = scheduler.add_job(run_container, 'interval', days=1,
-                                    args=[container, command, env, tool, dataset], id=tool,
+                                    args=[container, command, env, tool, dataset, renku], id=tool,
                                     replace_existing=True,
                                     misfire_grace_time=3600, coalesce=True)
         elif freq == 'weekly':
             job = scheduler.add_job(run_container, 'interval', weeks=1,
-                                    args=[container, command, env, tool, dataset], id=tool,
+                                    args=[container, command, env, tool, dataset, renku], id=tool,
                                     replace_existing=True,
                                     misfire_grace_time=3600, coalesce=True)
         else:
             job = scheduler.add_job(run_container, CronTrigger.from_crontab(freq),
-                                    args=[container, command, env, tool, dataset], id=tool,
+                                    args=[container, command, env, tool, dataset, renku], id=tool,
                                     replace_existing=True,
                                     misfire_grace_time=3600, coalesce=True)
         response['job'] = job.id
         return response
     else:
-        response['exec_result'] = run_container(container, command, env, tool, dataset)
+        response['exec_result'] = run_container(container, command, env, tool, dataset, renku)
         return response
 
 
-def run_container(container, command, env, tool, dataset):
+def run_container(container, command, env, tool, dataset, renku):
     result = {}
-    docker_client.containers.run(container, command=command, environment=env,
+    status = ""
+    if renku:
+        datadir = f'{dataset}/data/input'
+        docker_client.containers.run(container, command=command, environment=env,
+                                 volumes={datadir: {'bind': '/usr/src/app/data'}},
+                                 network='host')
+        status = renku_update(dataset)
+        return status
+    else:
+        docker_client.containers.run(container, command=command, environment=env,
                                  volumes={dataset: {'bind': '/usr/src/app/data'}},
                                  network='host')
-    result = differ.detect(dataset, tool)
-    insights.report(dataset, tool, config['WORKING_ENVIRONMENT']['user'])
-    return result
+        result = differ.detect(dataset, tool)
+        insights.report(dataset, tool, config['WORKING_ENVIRONMENT']['user'])
+        return result
+
+
+def renku_update(path):
+    # Get the Renku project repo
+    repo = git.Repo(path)
+    # Attempt a pull
+    try:
+        origin = repo.remotes.origin
+        origin.pull()
+    except:
+        logging.info("Pull not completed")
+    # Commit and push new data
+    try:
+        repo.git.add('.')
+        repo.git.commit(m="Auto: Data update")
+        repo.git.push()
+    except:
+        logging.error("Data update failed")
+        return "Error pushing data to Renku"
+    # Run the renku workflow
+    try:
+        subprocess.run("renku update")
+    except:
+        logging.error("Renku update failed")
+        return "Error running Renku workflow"
+    # Push changes
+    try:
+        repo.git.push()
+    except:
+        logging.error("Final push failed")
+        return "Error pushing workflow result"
+    return "Renku project successfully updated"
+
 
 
 def listen():
