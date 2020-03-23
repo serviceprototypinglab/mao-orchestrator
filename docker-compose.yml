@@ -5,9 +5,9 @@ services:
     build: .
     environment:
       # Directory to be used for storing datasets
-      - importdir=/home/panos/testconfig
+      - importdir=/data
       # Temp files for leader election validations
-      - auditdir=/home/panos/audit_temp
+      - auditdir=/audit_temp
       # Username for elections
       - workuser=sonap
       - etcdhost=etcd
@@ -22,8 +22,8 @@ services:
       # Mount the host's Docker socket
       - /var/run/docker.sock:/var/run/docker.sock
       # Mount the data directories from the config file
-      - /home/panos/testconfig:/home/panos/testconfig
-      - /home/panos/audit_temp:/home/panos/audit_temp
+      - /home/panos/tutorial:/data
+      - /home/panos/audit_temp:/audit_temp
     networks:
         - mao
     depends_on:

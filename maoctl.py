@@ -103,16 +103,19 @@ def run_tool(name):
     print("Name of tool: " + response['scheduler_output']['tool'])
     print("Data directory: " + response['scheduler_output']['dataset'])
     print("Spike detector output:")
-    print("Data directory: " + response['scheduler_output']['exec_result']['datapath'])
-    print("Number of data snapshots: " + str(response['scheduler_output']['exec_result']['snapshots']))
-    print("Current rolling average of control metric: " + str(response['scheduler_output']['exec_result']['rolling_avg']))
-    print("Value of control metric in current snapshot: " + str(response['scheduler_output']['exec_result']['control_metric']))
-    print("Difference:" + str(response['scheduler_output']['exec_result']['diff']))
-    print("Gain:" + str(round(response['scheduler_output']['exec_result']['gain'],2)) + "%")
-    if response['scheduler_output']['exec_result']['spike']:
-        print("Spike detected. Notification writen to cluster")
+    if 'diff' in response['scheduler_output']['exec_result']:
+        print("Data directory: " + response['scheduler_output']['exec_result']['datapath'])
+        print("Number of data snapshots: " + str(response['scheduler_output']['exec_result']['snapshots']))
+        print("Current rolling average of control metric: " + str(response['scheduler_output']['exec_result']['rolling_avg']))
+        print("Value of control metric in current snapshot: " + str(response['scheduler_output']['exec_result']['control_metric']))
+        print("Difference:" + str(response['scheduler_output']['exec_result']['diff']))
+        print("Gain:" + str(round(response['scheduler_output']['exec_result']['gain'],2)) + "%")
+        if response['scheduler_output']['exec_result']['spike']:
+            print("Spike detected. Notification writen to cluster")
+        else:
+            print("No data anomalies detected")
     else:
-        print("No data anomalies detected")
+        print("Insufficient data snapshots for spike detection")
 
 
 def renku_run(name, renku):
