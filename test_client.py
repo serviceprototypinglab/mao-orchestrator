@@ -4,7 +4,7 @@ import json
 
 
 def get_datasets():
-    r = requests.get('http://0.0.0.0:8080/datasets')
+    r = requests.get('http://0.0.0.0:8080/registry/datasets')
     return r.json()
 
 
@@ -13,7 +13,7 @@ def add_dataset(name, url):
         "name": name,
         "url": url
     }
-    r = requests.post('http://0.0.0.0:8080/regdata', json=json_out)
+    r = requests.post('http://0.0.0.0:8080/registry/datasets', json=json_out)
     return r.json()
 
 
@@ -26,7 +26,7 @@ def add_tool(name, author, image, data_repo, code_repo, artefact):
         "code_repo": code_repo,
         "artefact": artefact
     }
-    r = requests.post('http://0.0.0.0:8080/register', json=json_out)
+    r = requests.post('http://0.0.0.0:8080/registry/tools', json=json_out)
     return r.json()
 
 
@@ -35,7 +35,7 @@ def run_tool(name):
         "name": name,
         "cron": False
     }
-    r = requests.post('http://0.0.0.0:8080/run', json=json_out)
+    r = requests.post('http://0.0.0.0:8080/jobs', json=json_out)
     return r.json()
 
 
@@ -57,4 +57,3 @@ class TestSpikeDetection(unittest.TestCase):
 
     def test_run_tool(self):
         assert run_tool('spike')['tool'] == 'panosece/spike:latest'
-
