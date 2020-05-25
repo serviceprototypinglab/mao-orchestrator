@@ -87,13 +87,21 @@ def run_container(container, command, env, tool, dataset, renku):
     if renku:
         datadir = f'{dataset}/data/input'
         docker_client.containers.run(container, command=command, environment=env,
-                                 volumes={datadir: {'bind': '/usr/src/app/data'}},
+                                 volumes={datadir: {'bind': '/usr/src/app/data'},
+                                         '/var/run/docker.sock':
+                                        {'bind': '/var/run/docker.sock'},
+                                       '/usr/bin/docker':
+                                        {'bind': '/usr/bin/docker'}},
                                  network='host')
         status = renku_update(dataset)
         return status
     else:
         docker_client.containers.run(container, command=command, environment=env,
-                                 volumes={dataset: {'bind': '/usr/src/app/data'}},
+                                 volumes={dataset: {'bind': '/usr/src/app/data'}
+                                        '/var/run/docker.sock':
+                                        {'bind': '/var/run/docker.sock'},
+                                       '/usr/bin/docker':
+                                        {'bind': '/usr/bin/docker'}},
                                  network='host')
         result = differ.detect(dataset, tool)
         insights.report(dataset, tool, config['WORKING_ENVIRONMENT']['user'])
