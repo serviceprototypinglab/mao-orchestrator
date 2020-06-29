@@ -97,7 +97,7 @@ def run_container(container, command, env, tool, dataset, renku):
         return status
     else:
         docker_client.containers.run(container, command=command, environment=env,
-                                 volumes={dataset: {'bind': '/usr/src/app/data'}
+                                 volumes={dataset: {'bind': '/usr/src/app/data'},
                                         '/var/run/docker.sock':
                                         {'bind': '/var/run/docker.sock'},
                                        '/usr/bin/docker':
