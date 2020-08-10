@@ -31,8 +31,8 @@ if config.has_section('POSTGRES') and config['POSTGRES']['DB'] != '':
                                                    postgres_host, postgres_db)
     scheduler.add_jobstore('sqlalchemy', url=url)
     jobstore = True
-logging.basicConfig(level=logging.DEBUG)
-logging.getLogger('apscheduler').setLevel(logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+#logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 scheduler.start()
 
 
@@ -111,12 +111,15 @@ def run_container(container, command, env, tool, dataset, renku):
 def renku_update(path):
     # Get the Renku project repo
     repo = git.Repo(path)
+    cwd = os.getcwd()
+    os.chdir(path)
     # Attempt a pull
     try:
         origin = repo.remotes.origin
         origin.pull()
     except:
         logging.info("Pull not completed")
+        os.chdir(cwd)
     # Commit and push new data
     try:
         repo.git.add('.')
@@ -124,19 +127,23 @@ def renku_update(path):
         repo.git.push()
     except:
         logging.error("Data update failed")
+        os.chdir(cwd)
         return "Error pushing data to Renku"
     # Run the renku workflow
     try:
-        subprocess.run("renku update")
+        subprocess.run("renku -S update", shell=True)
     except:
         logging.error("Renku update failed")
+        os.chdir(cwd)
         return "Error running Renku workflow"
     # Push changes
     try:
         repo.git.push()
     except:
         logging.error("Final push failed")
+        os.chdir(cwd)
         return "Error pushing workflow result"
+    os.chdir(cwd)
     return "Renku project successfully updated"
 
 

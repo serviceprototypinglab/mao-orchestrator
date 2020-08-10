@@ -6,7 +6,7 @@ import datetime
 import logging
 
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 
 def diff(path, name):
@@ -58,4 +58,3 @@ def detect(path, name):
         logging.debug("Notification entry writen to cluster.")
         logging.debug(etcd_client.list('notifications'))
     return result
-

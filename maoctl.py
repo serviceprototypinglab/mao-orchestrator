@@ -163,7 +163,7 @@ if __name__ == '__main__':
                      args.code_repo,args.artefact)
         elif args.tool == 'run':
             if args.renku:
-                renku_run(args.tool, args.renku)
+                renku_run(args.name, args.renku)
             else:
                 run_tool(args.name)
         elif args.tool == 'schedule':

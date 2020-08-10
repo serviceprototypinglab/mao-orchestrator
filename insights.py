@@ -3,7 +3,7 @@ import etcd_client
 import os
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 
 def report(path, tool, node):

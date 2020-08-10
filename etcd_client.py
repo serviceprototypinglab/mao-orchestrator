@@ -2,7 +2,7 @@ import etcd
 import configparser
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
 config.read('config.ini')
 etcd_host = config['ETCD']['HOST']

@@ -12,7 +12,7 @@ import audit
 import logging
 from etcd_client import write, get
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
 config.read('config.ini')
 importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
@@ -69,7 +69,7 @@ def sync(data):
         json_out = {
             "container": tool,
             "tool": data['name'],
-            "dataset": dataset,
+            "dataset": config['DATA_REPOS'][data['name']],
             "cron": data['cron'],
             "freq": freq,
             "command": command,
@@ -80,7 +80,7 @@ def sync(data):
         json_out = {
             "container": tool,
             "tool": data['name'],
-            "dataset": dataset,
+            "dataset": config['DATA_REPOS'][data['name']],
             "cron": data['cron'],
             "command": command,
             "env": env,
