@@ -8,6 +8,7 @@ This implementation makes use of an etcd cluster for member discovery and metada
 - [MAOCTL](#maoctl) To interact with the running instance
 - [MAO- Gateway](#mao-gateway) A tool that allows external tools to communicate with the cluster (WIP)
 - [Tool compliance](#tool-compliance) To create tools that can be deployed to the orchestrator
+- [Renku integration](#renku-integration) To automate data acquisition for Renku repositories
 
 # Install instructions
 
@@ -125,3 +126,26 @@ To create tools that can be deployed to the MAO Orchestrator they need to comply
 
 ## The demo tool
 The demo tool creates 3 mock data samples to trigger the spike detection and also shows the basic way to create a compliant tool. You can build it with Docker and register it (with a Github repository for the data, you can use any repository since after cloning it will only add data locally not make any commits) to test the functionality of the orchestrator.
+
+# Renku Integation
+
+The MAO Orchestrator can be given special parameters to interact with Renku repositories.
+
+## Registering a tool to work with Renku
+
+The orchestrator can only clone and update Renku repositories. Initial setup needs to be done in the standard manner as per the Renku documentation, including:
+
+- recording the initial workflow
+- SSH key management
+
+In order to make a tool work with Renku simply register a Renku repository by git link when registering the tool, for example:
+```
+python3 maoctl.py tool add <tool name> <author> <docker image> <Renku repo of dataset> <code repo of the tool> <Dataset description>
+```
+
+## Running in Renku mode
+
+Adding the `--renku` flag to the run command of a Renku tool will add the following behavior:
+- The Renku repo will be cloned if it has not been cloned before
+- The `data/input` folder within the repo will be mounted as the data volume of the tool container
+- After the tool exits the new input data will be commited pushed and a new `renku update` command will be executed, followed by a second push.
