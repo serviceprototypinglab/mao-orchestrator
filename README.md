@@ -127,7 +127,7 @@ To create tools that can be deployed to the MAO Orchestrator they need to comply
 ## The demo tool
 The demo tool creates 3 mock data samples to trigger the spike detection and also shows the basic way to create a compliant tool. You can build it with Docker and register it (with a Github repository for the data, you can use any repository since after cloning it will only add data locally not make any commits) to test the functionality of the orchestrator.
 
-# Renku Integation
+# Renku Integration
 
 The MAO Orchestrator can be given special parameters to interact with Renku repositories.
 
