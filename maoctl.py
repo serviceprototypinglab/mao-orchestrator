@@ -148,6 +148,18 @@ def schedule_tool(name, frequency):
     print("ID of scheduled job: " + response['scheduler_output']['job'])
 
 
+def schedule_renku(name, frequency, renku):
+    json_out = {
+    "name": name,
+    "cron": True,
+    "frequency": frequency,
+    "renku": renku
+    }
+    r = requests.post('http://0.0.0.0:8080/jobs', json=json_out)
+    response = r.json()
+    print(response)
+
+
 
 if __name__ == '__main__':
     arguments = arguments.Arguments()
@@ -167,7 +179,10 @@ if __name__ == '__main__':
             else:
                 run_tool(args.name)
         elif args.tool == 'schedule':
-            schedule_tool(args.name, args.frequency)
+            if args.renku:
+                schedule_renku(args.name, args.frequency, args.renku)
+            else:
+                schedule_tool(args.name, args.frequency)
         elif args.tool == 'remove':
             remove_tool(args.name)
         elif args.tool == 'list-scheduled':

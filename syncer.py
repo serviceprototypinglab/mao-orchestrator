@@ -48,7 +48,7 @@ def sync(data):
         command = data['command']
     if 'renku' in data:
         renku = True
-        payload['data_repo'] = data['renku']
+        #payload['data_repo'] = data['renku']
     # Check if dataset has been cloned already
     if not config.has_option('DATA_REPOS', data['name']):
         # Clone dataset
