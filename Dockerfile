@@ -11,8 +11,6 @@ COPY . ./
 
 RUN pip3 install -r requirements.txt
 
-RUN pip3 install --pre renku
-
 ENTRYPOINT ["sh", "-c"]
 
 CMD ["sh env_to_conf.sh && python3 ./async_launcher.py"]

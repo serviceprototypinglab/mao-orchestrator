@@ -115,16 +115,20 @@ def renku_update(path):
     os.chdir(path)
     # Attempt a pull
     try:
-        origin = repo.remotes.origin
-        origin.pull()
+        #origin = repo.remotes.origin
+        #origin.pull()
+        subprocess.run('git pull', shell=True)
     except:
         logging.info("Pull not completed")
         #os.chdir(cwd)
     # Commit and push new data
     try:
-        repo.git.add('.')
-        repo.git.commit(m="Auto: Data update")
-        repo.git.push()
+        #repo.git.add('.')
+        #repo.git.commit(m="Auto: Data update")
+        #repo.git.push()
+        subprocess.run('git add .', shell=True)
+        subprocess.run('git commit -m "Auto: Data update"', shell=True)
+        subprocess.run('git push', shell=True)
     except:
         logging.error("Data update failed")
         #os.chdir(cwd)
@@ -138,7 +142,7 @@ def renku_update(path):
         return "Error running Renku workflow"
     # Push changes
     try:
-        repo.git.push()
+        subprocess.run('git push', shell=True)
     except:
         logging.error("Final push failed")
         #os.chdir(cwd)

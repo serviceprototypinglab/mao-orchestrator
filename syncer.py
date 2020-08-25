@@ -10,6 +10,8 @@ import glob
 from datetime import datetime
 import audit
 import logging
+import os
+import subprocess
 from etcd_client import write, get
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -61,7 +63,8 @@ def sync(data):
         with open('config.ini', 'w') as f:
             config.write(f)
         try:
-            git.Repo.clone_from(payload['data_repo'], dataset)
+            #git.Repo.clone_from(payload['data_repo'], dataset)
+            subprocess.run(f"git clone {payload['data_repo']} {dataset}", shell=True)
         except:
             print("Error cloning data")
     if data['cron']:
