@@ -54,14 +54,14 @@ def sync(data):
         # Clone dataset
         print("Cloning dataset from: " + payload['data_repo'] + " to: " + dataset)
         response['dataset'] = payload['data_repo']
+        print("Updating config")
+        if not config.has_section('DATA_REPOS'):
+            config.add_section('DATA_REPOS')
+        config.set('DATA_REPOS', data['name'], dataset)
+        with open('config.ini', 'w') as f:
+            config.write(f)
         try:
             git.Repo.clone_from(payload['data_repo'], dataset)
-            print("Updating config")
-            if not config.has_section('DATA_REPOS'):
-                config.add_section('DATA_REPOS')
-            config.set('DATA_REPOS', data['name'], dataset)
-            with open('config.ini', 'w') as f:
-                config.write(f)
         except:
             print("Error cloning data")
     if data['cron']:
