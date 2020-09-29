@@ -2,6 +2,7 @@ version: "3"
 services:
   # The jobstore for scheduling crawlers and etcd listeners
   db:
+    restart: always
     image: "postgres"
     environment:
       - POSTGRES_USER=scheduler
@@ -14,6 +15,7 @@ services:
     network_mode: "host"
   # The etcd node
   etcd:
+    restart: always
     image: quay.io/coreos/etcd
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
