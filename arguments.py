@@ -51,9 +51,6 @@ class Arguments:
         clone_datasets = dataset_parsers.add_parser('clone', help="Clone a dataset")
         clone_datasets.add_argument('name', help="Name of the dataset to retrieve")
 
-        audit_datasets = dataset_parsers.add_parser('audit', help="Initiate an election to find the best snapshot of a dataset")
-        audit_datasets.add_argument('name', help="Name of the dataset to audit")
-
         remove_dataset = dataset_parsers.add_parser('remove', help="Unregister a dataset")
         remove_dataset.add_argument('name', help="Name of the dataset to unregister")
 

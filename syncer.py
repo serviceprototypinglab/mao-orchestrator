@@ -8,7 +8,6 @@ import shutil
 import base64
 import glob
 from datetime import datetime
-import audit
 import logging
 import os
 import subprocess
@@ -146,19 +145,3 @@ def retrieve(name):
         print("Error pulling data.")
         logging.error("Error retrieving data.")
         return "Error pulling data."
-
-
-def create_audit(tool):
-    # Creation of audit entry
-    issuer = config['WORKING_ENVIRONMENT']['user']
-    timestamp = datetime.now()
-    audit_id = timestamp.microsecond
-    write("audit/{}".format(audit_id), '{{"issuer":"{}",\
-    "tool":"{}",\
-    "timestamp":"{}"}}'.format(issuer, tool, timestamp))
-    # Send file if exists
-    if config.has_option('DATA_REPOS', tool):
-        filename = audit.submit(tool, audit_id, issuer)
-        return "Created audit {} and submitted file {}".format(audit_id, filename)
-    else:
-        return "Created audit {}. No local file to submit.".format(audit_id)

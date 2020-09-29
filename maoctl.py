@@ -78,15 +78,6 @@ def remove_local(name):
     r = requests.delete('http://0.0.0.0:8080/files/' + name)
     print(r.json())
 
-
-def audit(name):
-    json_out = {
-    "name": name
-    }
-    r = requests.post('http://0.0.0.0:8080/audit', json=json_out)
-    print(r.json())
-
-
 def run_tool(name):
     json_out = {
     "name": name,
@@ -205,5 +196,3 @@ if __name__ == '__main__':
             list_local()
         elif args.dataset == 'remove-local':
             remove_local(args.name)
-        elif args.dataset == 'audit':
-            audit(args.name)

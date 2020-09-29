@@ -95,12 +95,6 @@ async def register(request):
     return web.json_response(syncer.remove_local(request.match_info['name']))
 
 
-@routes.post('/audit')
-async def register(request):
-    data = await request.json()
-    return web.json_response(syncer.create_audit(data['name']))
-
-
 @routes.get('/files/clone/{dataset}')
 async def retrieve(request):
     dataset = request.match_info['dataset']
