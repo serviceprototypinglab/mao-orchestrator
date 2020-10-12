@@ -37,6 +37,9 @@ def sync(data):
     renku = False
     blob = get('tools/{}'.format(data['name']))
     payload = json.loads(blob)
+    if 'dataset' in data and 'node' in data:
+        new_repo = get(f"data/{data['dataset']}/{data['node']}")
+        payload['data_repo'] = new_repo
     tool = payload['image']
     print("Tool invoked: " + tool)
     response['tool'] = tool
@@ -109,14 +112,15 @@ def remove_local(name):
 
 
 
-def retrieve(name):
+def retrieve(name, node):
     try:
-        value = get("/data/" + name)
+        value = get("/data/" + name + '/' + node)
     except:
         print("No such entry")
         return "This name does not correspond to an entry"
     try:
-        git.Repo.clone_from(value, importdir + "/" + name)
+        #git.Repo.clone_from(value, importdir + "/" + name)
+        subprocess.run(f"git clone {value} {importdir + '/' + name}", shell=True)
         if not config.has_option('DATA_REPOS', name):
             print("Updating config")
             logging.info("updating config")

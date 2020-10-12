@@ -102,7 +102,6 @@ def run_container(container, command, env, tool, dataset, renku):
                                         {'bind': '/usr/bin/docker'}},
                                  network='host')
         result = differ.detect(dataset, tool)
-        insights.report(dataset, tool, config['WORKING_ENVIRONMENT']['user'])
         return result
 
 

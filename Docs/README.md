@@ -9,9 +9,5 @@ API reference will be added after the API specification is finalized. Until then
 - Architecture
 - Dataset management
 - Tool management
-- Spike detection
 - Peer validation
-- MAO Gateway
-  - Architecture
-  - Discovery
-  - External data and integrations
+- Renku integration

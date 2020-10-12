@@ -37,8 +37,8 @@ services:
       - ETCD_INITIAL_CLUSTER=etcd=http://127.0.0.1:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
     ports:
-      - "23790:2379"
-      - "23800:2380"
+      - "2379:2379"
+      - "2380:2380"
     volumes:
       - ./etcd-data:/etcd-data
     network_mode: "host"
