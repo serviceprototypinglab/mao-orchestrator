@@ -12,6 +12,7 @@ import logging
 import os
 import subprocess
 from etcd_client import write, get
+import collect
 
 #logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
@@ -120,7 +121,7 @@ def retrieve(name, node):
         return "This name does not correspond to an entry"
     try:
         #git.Repo.clone_from(value, importdir + "/" + name)
-        subprocess.run(f"git clone {value} {importdir + '/' + name}", shell=True)
+        subprocess.run(f"git clone {value} {importdir + '/' + name + '/' + node}", shell=True)
         if not config.has_option('DATA_REPOS', name):
             print("Updating config")
             logging.info("updating config")
@@ -149,3 +150,18 @@ def retrieve(name, node):
         print("Error pulling data.")
         logging.error("Error retrieving data.")
         return "Error pulling data."
+
+
+def temp_retrieve(name, nodes):
+    for node in nodes:
+        try:
+            value = get("/data/" + name + '/' + node)
+        except:
+            print("No such entry")
+            return "This name does not correspond to an entry"
+        try:
+            #git.Repo.clone_from(value, importdir + "/" + name)
+            subprocess.run(f"git clone {value} {importdir + '/' + 'tmp' + '/' + name + '/' + node}", shell=True)
+        except:
+            print("Error cloning data")
+    collect.consensus(importdir + '/' + 'tmp' + '/' + name)

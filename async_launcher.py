@@ -28,6 +28,11 @@ async def datasets(request):
     return web.json_response(etcd_client.get(f"data/{request.match_info['dataset']}/{request.match_info['node']}"))
 
 
+@routes.get('/registry/datasets/{dataset}')
+async def datasets(request):
+    return web.json_response(etcd_client.read_recursive(f"data/{request.match_info['dataset']}"))
+
+
 @routes.get('/files')
 async def datasets(request):
     return web.json_response(syncer.list_local())
@@ -100,6 +105,14 @@ async def retrieve(request):
     dataset = request.match_info['dataset']
     node = request.match_info['node']
     response = syncer.retrieve(dataset, node)
+    return web.json_response(response)
+
+
+@routes.get('/files/cloneall/{dataset}')
+async def retrieveall(request):
+    reg = etcd_client.read_recursive(f"data/{request.match_info['dataset']}")
+    nodes = list(key.split('/')[3] for key in reg.keys())
+    response = syncer.temp_retrieve(request.match_info['dataset'], nodes)
     return web.json_response(response)
 
 

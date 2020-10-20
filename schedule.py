@@ -61,17 +61,17 @@ def schedule_run(data):
             job = scheduler.add_job(run_container, 'interval', days=1,
                                     args=[container, command, env, tool, dataset, renku], id=tool,
                                     replace_existing=True,
-                                    misfire_grace_time=3600, coalesce=True)
+                                    misfire_grace_time=64800, coalesce=True)
         elif freq == 'weekly':
             job = scheduler.add_job(run_container, 'interval', weeks=1,
                                     args=[container, command, env, tool, dataset, renku], id=tool,
                                     replace_existing=True,
-                                    misfire_grace_time=3600, coalesce=True)
+                                    misfire_grace_time=64800, coalesce=True)
         else:
             job = scheduler.add_job(run_container, CronTrigger.from_crontab(freq),
                                     args=[container, command, env, tool, dataset, renku], id=tool,
                                     replace_existing=True,
-                                    misfire_grace_time=3600, coalesce=True)
+                                    misfire_grace_time=64800, coalesce=True)
         response['job'] = job.id
         return response
     else:
