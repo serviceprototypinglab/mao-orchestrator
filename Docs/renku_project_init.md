@@ -45,7 +45,7 @@ After the tool executes the new raw data will be pushed to Renku and ```renku up
 
 - For the trial run you can use mock values for the repository fields, as they will be replaced by Renku repos. Pay special attention that the data files are indeed generated on the host, as this is the most common point of failure.
 
-- Clean up the local data files from the test run, as MAO will by default attempt to merge the Renku data afterwards, leading to conflicts. You may also need to remove your tool's entry from MAO's `config.ini` file so that the automated data import triggers in the automation step.
+- Send a DELETE request to `localhost:8080/files/{your-tool}` to clean up the local files and configuration entries of the test run.
 
 ## Renku workflow test-run
 
