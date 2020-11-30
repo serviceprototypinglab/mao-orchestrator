@@ -2,7 +2,7 @@ from aiohttp import web
 import syncer
 import etcd_client
 import json
-
+import schedule
 
 app = web.Application()
 routes = web.RouteTableDef()
@@ -108,10 +108,11 @@ async def retrieve(request):
     return web.json_response(response)
 
 
-@routes.get('/files/cloneall/{dataset}')
+@routes.get('/files/consensus/{dataset}')
 async def retrieveall(request):
     reg = etcd_client.read_recursive(f"data/{request.match_info['dataset']}")
     nodes = list(key.split('/')[3] for key in reg.keys())
+    print(nodes)
     response = syncer.temp_retrieve(request.match_info['dataset'], nodes)
     return web.json_response(response)
 
@@ -121,6 +122,18 @@ async def run(request):
     data = await request.json()
     print(data)
     response = syncer.sync(data)
+    return web.json_response(response)
+
+@routes.post("/remote")
+async def remote(request):
+    data = await request.json()
+    response = schedule.run_remote(data['tool'], data['command'])
+    return web.json_response(response)
+
+@routes.post("/inmem")
+async def inmem(request):
+    data = await request.json()
+    response = schedule.run_in_mem(data['tool'], data['artefact'])
     return web.json_response(response)
 
 

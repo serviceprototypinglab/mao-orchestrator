@@ -4,3 +4,4 @@ __pycache__/
 bootstrap.sh
 *.json
 *.csv
+infile/

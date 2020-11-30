@@ -118,6 +118,9 @@ def renku_run(name, renku, *args):
 
 
 def schedule_tool(name, frequency, *args):
+    #print(name, frequency)
+    #for arg in args:
+    #    print(arg)
     if len(args) == 2:
         json_out = {
         "name": name,
@@ -186,12 +189,12 @@ if __name__ == '__main__':
         elif args.tool == 'schedule':
             if args.renku:
                 if args.dataset and args.node:
-                    schedule_renku(args.name, args.renku, args.dataset, args.node)
+                    schedule_renku(args.name, args.frequency, args.renku, args.dataset, args.node)
                 else:
                     schedule_renku(args.name, args.frequency, args.renku)
             else:
                 if args.dataset and args.node:
-                    schedule_tool(args.name, args.dataset, args.node)
+                    schedule_tool(args.name,args.frequency, args.dataset, args.node)
                 else:
                     schedule_tool(args.name, args.frequency)
         elif args.tool == 'remove':

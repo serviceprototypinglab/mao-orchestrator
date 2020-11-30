@@ -42,6 +42,7 @@ def validate(prefix, idx, metrics, props, filenames):
                         outliers.append([index, field, value])
     outlier_json = []
     for item in outliers:
+        print(item)
         item.append(df.loc[(df[idx] == item[0]) & (df[item[1]] == item[2])]['node_id'].values[0])
         print(item)
         outlier_json.append(item)

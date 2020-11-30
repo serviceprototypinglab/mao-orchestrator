@@ -12,8 +12,11 @@ import logging
 import git
 import subprocess
 from datetime import datetime
+import yaml
+from pathlib import Path
 
 
+Path("./infile").mkdir(parents=True, exist_ok=True)
 docker_client = docker.from_env()
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -105,6 +108,24 @@ def run_container(container, command, env, tool, dataset, renku):
         return result
 
 
+def run_remote(tool, command):
+    output = docker_client.containers.run(tool, command=command)
+    my_json = output.decode('utf8').replace("'", '"')
+    return json.loads(my_json)
+
+
+def run_in_mem(tool, artefact):
+    with open('infile/input.yaml', 'w') as file:
+        yaml.dump(artefact, file)
+    filepath = os.path.abspath('./infile/')
+    docker_client.containers.run(tool,
+                                 command='-o json --outputfile out.json manifest -f input.yaml',
+                                 volumes={filepath: {'bind': '/data'}})
+    with open('infile/out.json', 'r') as ofile:
+        output = json.load(ofile)
+        return output
+
+
 def renku_update(path):
     # Get the Renku project repo
     repo = git.Repo(path)
@@ -132,7 +153,7 @@ def renku_update(path):
         return "Error pushing data to Renku"
     # Run the renku workflow
     try:
-        subprocess.run("renku -S update", shell=True)
+        subprocess.run("renku -S update -a", shell=True)
     except:
         logging.error("Renku update failed")
         #os.chdir(cwd)
