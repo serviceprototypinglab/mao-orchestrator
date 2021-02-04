@@ -7,6 +7,10 @@ import schedule
 app = web.Application()
 routes = web.RouteTableDef()
 
+@routes.get('/')
+async def regtools(request):
+    return web.json_response('hello')
+
 
 @routes.get('/registry/tools')
 async def regtools(request):
