@@ -1,4 +1,4 @@
-aiohttp==3.5.4
+aiohttp==3.7.4
 GitPython==2.1.11
 python-etcd==0.4.5
 docker==4.0.2
