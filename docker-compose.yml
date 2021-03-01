@@ -5,22 +5,27 @@ services:
     build: .
     environment:
       # Directory to be used for storing datasets
-      - importdir=/data
+      - importdir=/home/user/data
       # Username for elections
-      - workuser=sonap
+      - workuser=sonapi
       - etcdhost=0.0.0.0
       - port=2379
       - dbuser=scheduler
       - password=password
       - db=schedule
       - dbhost=0.0.0.0
+      # Git credentials
+      - gitemail=<>
+      - gitusername=<>
     ports:
       - "8080:8080"
     volumes:
       # Mount the host's Docker socket
       - /var/run/docker.sock:/var/run/docker.sock
       # Mount the data directories from the config file
-      - /home/panos/tutorial:/data
+      - /home/panos/tutorial:/home/user/data
+      # Git config
+      - /home/panos/dockerssh/keys/:/home/user/.ssh
     network_mode: "host"
     depends_on:
       - etcd

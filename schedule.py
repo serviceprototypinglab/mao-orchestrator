@@ -11,6 +11,7 @@ import os
 import logging
 import git
 import subprocess
+import requests
 from datetime import datetime
 import yaml
 from pathlib import Path
@@ -109,14 +110,12 @@ def run_container(container, command, env, tool, dataset, renku):
 
 ##### New pipeline method (scheduling not supported yet) ######################
 def pipeline_run(image, data_dir):
-    docker_client.containers.run(image,
-                             volumes={data_dir: {'bind': '/usr/src/app/data'},
-                                    '/var/run/docker.sock':
-                                    {'bind': '/var/run/docker.sock'},
-                                   '/usr/bin/docker':
-                                    {'bind': '/usr/bin/docker'}},
-                             network='host')
-    # Once we implement scheduling we want the git part to be part of the job
+    json_out = {
+    "image": image,
+    "data_dir": data_dir
+    }
+    r = requests.post('http://0.0.0.0:8081/run', json=json_out)
+    #print(r.json())
     old_wd = os.getcwd()
     os.chdir(data_dir)
     subprocess.run(f"git add .", shell=True)

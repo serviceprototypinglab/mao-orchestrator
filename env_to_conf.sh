@@ -13,3 +13,8 @@ echo "[WORKING_ENVIRONMENT]\n"\
 "db = $db\n"\
 "host = $dbhost\n\n"\
 "[DATA_REPOS]" > config.ini
+
+echo "StrictHostKeyChecking no" >> /home/user/.ssh/config
+#echo "StrictHostKeyChecking no" >> /.ssh/config
+git config --global user.email $gitemail
+git config --global user.name $gitusername
