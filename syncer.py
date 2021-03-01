@@ -18,6 +18,9 @@ import collect
 config = configparser.ConfigParser()
 config.read('config.ini')
 importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
+
+#### New pipeline: username is used to generate a name for the branch
+user = config['WORKING_ENVIRONMENT']['USER']
 if importdir.endswith('/'):
     importdir = importdir[:-1]
 
@@ -96,6 +99,62 @@ def sync(data):
     response['message'] = json.dumps(json_out)
     response['scheduler_output'] = schedule.schedule_run(json_out)
     return response
+
+###### New pipeline methods
+
+# Attention!!! This code will not work in docker before adding ssh config
+def pipeline_init(tool, dataset):
+    # Clone dataset
+    ## Get git link
+    dataset_json = get(f"dataset/{dataset}")
+    ## etcd does not like double quotes but json needs them
+    dataset_json = dataset_json.replace("'", '"')
+    dataset_dict = json.loads(dataset_json)
+    dataset_git = dataset_dict['master']
+    ################ Rapid-prototyping code, bad error handling!!!#############
+    local_dir = importdir + "/" + tool
+    try:
+        subprocess.run(f"git clone {dataset_git} {local_dir}", shell=True)
+    except:
+        return f"Could not clone, check if {local_dir} exists and is not empty"
+    # Create new branch (use node name from config)
+    branch_name = user
+    ## Get into the git dir
+    old_wd = os.getcwd()
+    os.chdir(f'{local_dir}')
+    try:
+        subprocess.run(f"git checkout -b {branch_name}", shell=True)
+        subprocess.run(f"git push --set-upstream origin {branch_name}", shell=True)
+    except:
+        return f"Could not create branch, check if {branch_name} already exists"
+    os.chdir(old_wd)
+    ##########################################################################
+    # Register the branch
+    dataset_dict['nodes'].append(branch_name)
+    write(f"dataset/{dataset}", dataset_dict)
+    # Save the association tool + branch on node (including local path)
+    pipeline = {"tool": tool,
+                "dataset": dataset,
+                "branch": branch_name,
+                "local_dir": local_dir
+               }
+    # TODO change this to nested json for faster searching
+    with open("pipelines.json", 'r') as pipeline_file:
+        pipelines = json.load(pipeline_file)
+    with open("pipelines.json", 'w') as pipeline_file:
+        pipelines['pipelines'].append(pipeline)
+        json.dump(pipelines, pipeline_file)
+    return pipeline
+
+def pipeline_run(name):
+    # Read config
+    # Mount the branch folder
+    # Schedule the tool
+    # Commit and push branch
+    pass
+
+###### End of new pipeline methods
+
 
 
 def list_local():
