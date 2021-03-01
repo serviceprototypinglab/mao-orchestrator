@@ -138,12 +138,11 @@ def pipeline_init(tool, dataset):
                 "branch": branch_name,
                 "local_dir": local_dir
                }
-    # TODO change this to nested json for faster searching
     with open("pipelines.json", 'r') as pipeline_file:
         pipelines = json.load(pipeline_file)
     with open("pipelines.json", 'w') as pipeline_file:
-        pipelines['pipelines'].append(pipeline)
-        json.dump(pipelines, pipeline_file)
+        pipelines['pipelines'][tool] = pipeline
+        json.dump(pipelines, pipeline_file, indent=4)
     return pipeline
 
 def pipeline_run(name):
