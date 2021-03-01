@@ -100,7 +100,7 @@ def sync(data):
     response['scheduler_output'] = schedule.schedule_run(json_out)
     return response
 
-###### New pipeline methods
+###### New pipeline methods ###################################################
 
 # Attention!!! This code will not work in docker before adding ssh config
 def pipeline_init(tool, dataset):
@@ -121,7 +121,7 @@ def pipeline_init(tool, dataset):
     branch_name = user
     ## Get into the git dir
     old_wd = os.getcwd()
-    os.chdir(f'{local_dir}')
+    os.chdir(local_dir)
     try:
         subprocess.run(f"git checkout -b {branch_name}", shell=True)
         subprocess.run(f"git push --set-upstream origin {branch_name}", shell=True)
@@ -145,14 +145,26 @@ def pipeline_init(tool, dataset):
         json.dump(pipelines, pipeline_file, indent=4)
     return pipeline
 
+### Scheduling not supported yet
+### Need tool for testing
 def pipeline_run(name):
     # Read config
-    # Mount the branch folder
-    # Schedule the tool
-    # Commit and push branch
-    pass
+    with open("pipelines.json", 'r') as pipeline_file:
+        pipelines = json.load(pipeline_file)
+    pipeline = pipelines['pipelines'][name]
+    local_dir = pipeline['local_dir']
+    # Run the tool + Mount the branch folder
+    ## Fetch tool metadata from registry
+    tool_json = get(f"tools/{name}")
+    ## etcd does not like double quotes but json needs them
+    tool_json = tool_json.replace("'", '"')
+    tool_dict = json.loads(tool_json)
+    tool_image = tool_dict['image']
+    ## Use NEW run method from scheduler
+    schedule.pipeline_run(tool_image, local_dir)
+    return pipeline
 
-###### End of new pipeline methods
+###### End of new pipeline methods ############################################
 
 
 

@@ -83,7 +83,7 @@ async def register(request):
     etcd_client.write("data/{}/{}".format(data['name'], data['node']), data['url'])
     return web.json_response(etcd_client.get("data/{}".format(data['name'])))
 
-##### New pipeline endpoints
+##### New pipeline endpoints ##################################################
 
 # Register dataset with new schema
 @routes.post('/registry/new_datasets')
@@ -106,10 +106,10 @@ async def init(request):
 async def init(request):
     data = await request.json()
     name = data['name']
-    syncer.pipeline_run(name)
-    return web.json_response({"name": name})
+    response = syncer.pipeline_run(name)
+    return web.json_response(response)
 
-####### End of new pipeline endpoints
+####### End of new pipeline endpoints #########################################
 
 @routes.delete('/registry/tools/{tool}')
 async def register(request):
