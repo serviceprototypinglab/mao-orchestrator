@@ -111,7 +111,6 @@ def pipeline_init(tool, dataset):
     dataset_json = dataset_json.replace("'", '"')
     dataset_dict = json.loads(dataset_json)
     dataset_git = dataset_dict['master']
-    ################ Rapid-prototyping code, bad error handling!!!#############
     local_dir = importdir + "/" + tool
     try:
         subprocess.run(f"git clone {dataset_git} {local_dir}", shell=True)
@@ -128,7 +127,6 @@ def pipeline_init(tool, dataset):
     except:
         return f"Could not create branch, check if {branch_name} already exists"
     os.chdir(old_wd)
-    ##########################################################################
     # Register the branch
     dataset_dict['nodes'].append(branch_name)
     write(f"dataset/{dataset}", dataset_dict)
@@ -138,8 +136,11 @@ def pipeline_init(tool, dataset):
                 "branch": branch_name,
                 "local_dir": local_dir
                }
-    with open("pipelines.json", 'r') as pipeline_file:
-        pipelines = json.load(pipeline_file)
+    try:
+        with open("pipelines.json", 'r') as pipeline_file:
+            pipelines = json.load(pipeline_file)
+    except:
+        pipelines = {"pipelines": {}}
     with open("pipelines.json", 'w') as pipeline_file:
         pipelines['pipelines'][tool] = pipeline
         json.dump(pipelines, pipeline_file, indent=4)
