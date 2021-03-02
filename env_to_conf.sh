@@ -2,6 +2,7 @@
 
 echo "[WORKING_ENVIRONMENT]\n"\
 "importdir = $importdir\n"\
+"hostdir = $hostdir\n"\
 "auditdir = $auditdir\n"\
 "user = $workuser\n\n"\
 "[ETCD]\n"\

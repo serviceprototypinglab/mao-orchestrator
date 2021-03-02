@@ -1,0 +1,16 @@
+{
+    "pipelines": {
+        "testbench": {
+            "tool": "testbench",
+            "dataset": "bench",
+            "branch": "sonap",
+            "local_dir": "/home/panos/testconfig/testbench"
+        },
+        "benchtest": {
+            "tool": "benchtest",
+            "dataset": "bench",
+            "branch": "sonap",
+            "local_dir": "/home/panos/testconfig/benchtest"
+        }
+    }
+}

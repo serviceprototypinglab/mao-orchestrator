@@ -18,6 +18,7 @@ import collect
 config = configparser.ConfigParser()
 config.read('config.ini')
 importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
+hostdir = config['WORKING_ENVIRONMENT']['HOSTDIR']
 
 #### New pipeline: username is used to generate a name for the branch
 user = config['WORKING_ENVIRONMENT']['USER']
@@ -102,7 +103,6 @@ def sync(data):
 
 ###### New pipeline methods ###################################################
 
-# Attention!!! This code will not work in docker before adding ssh config
 def pipeline_init(tool, dataset):
     # Clone dataset
     ## Get git link
@@ -137,23 +137,23 @@ def pipeline_init(tool, dataset):
                 "local_dir": local_dir
                }
     try:
-        with open("pipelines.json", 'r') as pipeline_file:
+        with open(f"{importdir}/pipelines.json", 'r') as pipeline_file:
             pipelines = json.load(pipeline_file)
     except:
         pipelines = {"pipelines": {}}
-    with open("pipelines.json", 'w') as pipeline_file:
+    with open(f"{importdir}/pipelines.json", 'w') as pipeline_file:
         pipelines['pipelines'][tool] = pipeline
         json.dump(pipelines, pipeline_file, indent=4)
     return pipeline
 
 ### Scheduling not supported yet
-### Need tool for testing
 def pipeline_run(name):
     # Read config
-    with open("pipelines.json", 'r') as pipeline_file:
+    with open(f"{importdir}/pipelines.json", 'r') as pipeline_file:
         pipelines = json.load(pipeline_file)
     pipeline = pipelines['pipelines'][name]
     local_dir = pipeline['local_dir']
+    host_dir = hostdir+ "/" + name
     # Run the tool + Mount the branch folder
     ## Fetch tool metadata from registry
     tool_json = get(f"tools/{name}")
@@ -162,8 +162,8 @@ def pipeline_run(name):
     tool_dict = json.loads(tool_json)
     tool_image = tool_dict['image']
     ## Use NEW run method from scheduler
-    schedule.pipeline_run(tool_image, local_dir)
-    return pipeline
+    output = schedule.pipeline_run(tool_image, local_dir, host_dir)
+    return {"pipeline": pipeline, "output": output}
 
 ###### End of new pipeline methods ############################################
 

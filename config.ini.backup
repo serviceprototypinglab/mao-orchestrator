@@ -1,5 +1,6 @@
 [WORKING_ENVIRONMENT]
 importdir = /home/panos/testconfig
+hostdir = /home/panos/testconfig
 auditdir = /home/panos/audit_temp
 user = sonap
 
@@ -25,4 +26,3 @@ foo3 = /home/panos/testconfig/foo3
 joke = /home/panos/testconfig/joke
 spike = /home/panos/testconfig/spike
 artifact = /home/panos/testconfig/artifact
-

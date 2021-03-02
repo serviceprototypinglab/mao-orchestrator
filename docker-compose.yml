@@ -6,8 +6,9 @@ services:
     environment:
       # Directory to be used for storing datasets
       - importdir=/home/user/data
+      - hostdir=/home/panos/tutorial
       # Username for elections
-      - workuser=sonapi
+      - workuser=sonapias3
       - etcdhost=0.0.0.0
       - port=2379
       - dbuser=scheduler
@@ -30,6 +31,22 @@ services:
     depends_on:
       - etcd
       - db
+  # The executor
+  executor:
+    build:
+      context: .
+      dockerfile: Dockerfile_executor
+    environment:
+      # Directory to be used for storing datasets
+      - importdir=/home/user/data
+    ports:
+      - "8081:8081"
+    volumes:
+      # Mount the host's Docker socket
+      - /var/run/docker.sock:/var/run/docker.sock
+    network_mode: "host"
+    depends_on:
+      - mao1
   # The jobstore for scheduling crawlers and etcd listeners
   db:
     image: "postgres"

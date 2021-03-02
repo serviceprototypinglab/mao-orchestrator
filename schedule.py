@@ -109,20 +109,20 @@ def run_container(container, command, env, tool, dataset, renku):
         return result
 
 ##### New pipeline method (scheduling not supported yet) ######################
-def pipeline_run(image, data_dir):
+def pipeline_run(image, local_dir, host_dir):
     json_out = {
     "image": image,
-    "data_dir": data_dir
+    "data_dir": host_dir
     }
     r = requests.post('http://0.0.0.0:8081/run', json=json_out)
-    #print(r.json())
+    print(r.json())
     old_wd = os.getcwd()
-    os.chdir(data_dir)
+    os.chdir(local_dir)
     subprocess.run(f"git add .", shell=True)
     subprocess.run(f'git commit -m "auto-exec"', shell=True)
     subprocess.run(f"git push", shell=True)
     os.chdir(old_wd)
-    return "done"
+    return r.json()
 
 ###############################################################################
 
