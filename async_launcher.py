@@ -106,7 +106,10 @@ async def init(request):
 async def init(request):
     data = await request.json()
     name = data['name']
-    response = syncer.pipeline_run(name)
+    cron = 'none'
+    if 'cron' in data:
+        cron = data['cron']
+    response = syncer.pipeline_run(name, cron)
     return web.json_response(response)
 
 ####### End of new pipeline endpoints #########################################

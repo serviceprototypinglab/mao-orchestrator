@@ -147,7 +147,7 @@ def pipeline_init(tool, dataset):
     return pipeline
 
 ### Scheduling not supported yet
-def pipeline_run(name):
+def pipeline_run(name, cron):
     # Read config
     with open(f"{importdir}/pipelines.json", 'r') as pipeline_file:
         pipelines = json.load(pipeline_file)
@@ -162,8 +162,12 @@ def pipeline_run(name):
     tool_dict = json.loads(tool_json)
     tool_image = tool_dict['image']
     ## Use NEW run method from scheduler
-    output = schedule.pipeline_run(tool_image, local_dir, host_dir)
-    return {"pipeline": pipeline, "output": output}
+    if cron == 'none':
+        output = schedule.pipeline_run(tool_image, local_dir, host_dir)
+        return {"pipeline": pipeline, "output": output}
+    else:
+        output = schedule.pipeline_cron(tool_image, local_dir, host_dir, cron)
+        return {"pipeline": pipeline, "job_id": output}
 
 ###### End of new pipeline methods ############################################
 

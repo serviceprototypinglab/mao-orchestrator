@@ -108,7 +108,7 @@ def run_container(container, command, env, tool, dataset, renku):
         result = differ.detect(dataset, tool)
         return result
 
-##### New pipeline method (scheduling not supported yet) ######################
+##### New pipeline method #####################################################
 def pipeline_run(image, local_dir, host_dir):
     json_out = {
     "image": image,
@@ -123,6 +123,13 @@ def pipeline_run(image, local_dir, host_dir):
     subprocess.run(f"git push", shell=True)
     os.chdir(old_wd)
     return r.json()
+
+def pipeline_cron(image, local_dir, host_dir, cron):
+    job = scheduler.add_job(pipeline_run, CronTrigger.from_crontab(cron),
+                            args=[image, local_dir, host_dir], id=image,
+                            replace_existing=True,
+                            misfire_grace_time=64800, coalesce=True)
+    return job.id
 
 ###############################################################################
 
