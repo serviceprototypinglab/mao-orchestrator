@@ -18,11 +18,7 @@ services:
       # Git credentials
       - gitemail=<>
       - gitusername=<>
-    ports:
-      - "8080:8080"
     volumes:
-      # Mount the host's Docker socket
-      - /var/run/docker.sock:/var/run/docker.sock
       # Mount the data directories from the config file
       - /home/panos/tutorial:/home/user/data
       # Git config
@@ -36,11 +32,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_executor
-    environment:
-      # Directory to be used for storing datasets
-      - importdir=/home/user/data
-    ports:
-      - "8081:8081"
     volumes:
       # Mount the host's Docker socket
       - /var/run/docker.sock:/var/run/docker.sock
@@ -54,8 +45,6 @@ services:
       - POSTGRES_USER=scheduler
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=schedule
-    ports:
-      - "54320:5432"
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     network_mode: "host"
@@ -81,9 +70,6 @@ services:
       #- ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
       - ETCD_INITIAL_CLUSTER=etcd=http://0.0.0.0:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
-    ports:
-      - "2379:2379"
-      - "2380:2380"
     volumes:
       - ./etcd-data:/etcd-data
     network_mode: "host"
