@@ -21,6 +21,16 @@ async def regtools(request):
 async def regtools(request):
     return web.json_response(etcd_client.get('tools/' + request.match_info['tool']))
 
+@routes.get('/registry/datasets')
+async def datasets(request):
+    return web.json_response(etcd_client.list('dataset'))
+
+
+@routes.get('/registry/datasets/{dataset}')
+async def datasets(request):
+    return web.json_response(etcd_client.get(f"dataset/{request.match_info['dataset']}/{request.match_info['node']}"))
+
+
 @routes.get('/jobs')
 async def datasets(request):
     return web.json_response(syncer.list_jobs())
@@ -58,7 +68,7 @@ async def register(request):
 ##### New pipeline endpoints ##################################################
 
 # Register dataset with new schema
-@routes.post('/registry/new_datasets')
+@routes.post('/registry/datasets')
 async def register(request):
     data = await request.json()
     etcd_client.write("dataset/{}".format(data['name']), data['body'])
@@ -89,6 +99,11 @@ async def init(request):
 @routes.delete('/registry/tools/{tool}')
 async def register(request):
     return web.json_response(etcd_client.delete("tools/{}".format(request.match_info['tool'])))
+
+@routes.delete('/registry/datasets/{dataset}')
+async def register(request):
+    return web.json_response(etcd_client.delete(f"dataset/{request.match_info['dataset']}/{request.match_info['node']}"))
+
 
 @routes.delete('/jobs/{id}')
 async def register(request):
