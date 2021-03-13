@@ -5,3 +5,4 @@ bootstrap.sh
 *.json
 *.csv
 infile/
+.vscode/
