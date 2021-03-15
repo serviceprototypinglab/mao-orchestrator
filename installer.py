@@ -27,8 +27,8 @@ class Installer:
         self.instance_name = input("Enter MAO instance name: ")
         self.instance_ip = input("Enter the public IP of the new MAO instance: ")
         self.etcd_operator_input = input("Enter the operator provided etcd config: ")
-        self.git_email = input("Enter your git config email address: ")
-        self.ssh_key_dir = input("Enter directory with ssh keys: ")
+        self.git_email = input("Enter your git config email address (used for MAO commits): ")
+        self.ssh_key_dir = input("Enter directory containing ssh keys (used for git authentication): ")
 
         # auto generated parameters
         _alphabet = string.ascii_letters + string.digits
@@ -69,6 +69,7 @@ class Installer:
             exit(1)
 
     def _check_dependencies(self):
+        """Checks if all dependencies of MAO are present on the system"""
 
         for dep in self.dependencies:
             if which(dep) is None:
