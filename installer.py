@@ -1,6 +1,7 @@
 import yaml
 import secrets
 import string
+import os
 
 from pathlib import Path
 from shutil import which
@@ -23,11 +24,10 @@ class Installer:
             exit(1)
         
         self.install_dir = input("Enter MAO install directory: ")
-        self.workuser = input("Enter MAO workuser: ")
+        self.instance_name = input("Enter MAO instance name: ")
         self.instance_ip = input("Enter the public IP of the new MAO instance: ")
         self.etcd_operator_input = input("Enter the operator provided etcd config: ")
         self.git_email = input("Enter your git config email address: ")
-        self.git_name = input("Enter your git config name: ")
         self.ssh_key_dir = input("Enter directory with ssh keys: ")
 
         # auto generated parameters
@@ -36,13 +36,12 @@ class Installer:
         self.scheduler_db = "schedule"
         self.import_dir = "/home/user/data"
         self.etcd_client_port = "2379"
+        self.etcd_subdir = "etcd"
+        self.mao_subdir = "data"
+        self.psql_subdir = "psql"
 
         # create MAO install directory
-        try:
-            Path(self.install_dir).mkdir(parents=True, exist_ok=True)
-        except PermissionError:
-            print("[Error] Permission to create directory '{}' denied.".format(self.install_dir))
-            exit(1)
+        self._create_install_directories()
 
         # write generated docker-compose.yaml to install directory
         with open("{}/docker-compose.yaml".format(self.install_dir), 'w') as file:
@@ -52,6 +51,22 @@ class Installer:
         print("\nUse the following commands to get your MAO instance up and running:")
         print("\t$ cd {}".format(self.install_dir))
         print("\t$ docker-compose up")
+
+    def _create_install_directories(self):
+        """Create directory structure and permissions for installation"""
+
+        # UID of the process inside the mao container
+        _mao_uid = 1000
+
+        try:
+            Path(self.install_dir).mkdir(parents=True, exist_ok=True)
+            Path("{}/{}".format(self.install_dir, self.etcd_subdir)).mkdir(parents=True, exist_ok=True)
+            Path("{}/{}".format(self.install_dir, self.psql_subdir)).mkdir(parents=True, exist_ok=True)
+            Path("{}/{}".format(self.install_dir, self.mao_subdir)).mkdir(parents=True, exist_ok=True)
+            os.chown("{}/{}".format(self.install_dir, self.mao_subdir), _mao_uid, -1)
+        except PermissionError:
+            print("[Error] Permission to create directory '{}' denied.".format(self.install_dir))
+            exit(1)
 
     def _check_dependencies(self):
 
@@ -71,11 +86,11 @@ class Installer:
                 # MAO orchestrator
                 "mao": {
                     # TODO switch to docker registry provided MAO image
-                    "build": ".",
+                    "image": "local/mao",
                     "environment": [
                         "importdir={}".format(self.import_dir),
-                        "hostdir={}/data".format(self.install_dir),
-                        "workuser={}".format(self.workuser),
+                        "hostdir={}/{}".format(self.install_dir, self.mao_subdir),
+                        "workuser={}".format(self.instance_name),
                         "etcdhost={}".format(self.instance_ip),
                         # TODO maybe witch to more speaking var names e.g. etcd_port?
                         "port={}".format(self.etcd_client_port),
@@ -84,13 +99,14 @@ class Installer:
                         "db={}".format(self.scheduler_db),
                         "dbhost=127.0.0.1",
                         "gitemail={}".format(self.git_email),
-                        "gitusername={}".format(self.git_name)
+                        "gitusername={}".format(self.instance_name)
                     ],
                     "ports": ["8080:8080"],
                     "volumes": [
                         # mount data directory from host
-                        "{host_dir}:{container_dir}".format(
+                        "{host_dir}/{host_subdir}:{container_dir}".format(
                             host_dir=self.install_dir,
+                            host_subdir=self.mao_subdir,
                             container_dir=self.import_dir
                         ),
                         # mount git used ssh keys directory
@@ -104,7 +120,8 @@ class Installer:
                 },
                 # MAO tool executor
                 "executor": {
-                    "build": ".",
+                    # TODO switch to docker registry provided MAO image
+                    "image": "local/executor",
                     "volumes": [
                         # mount Docker socket for container execution
                         "/var/run/docker.sock:/var/run/docker.sock"
@@ -124,7 +141,7 @@ class Installer:
                     ],
                     "volumes": [
                         # mount postgresql data directory
-                        "{}/psql:/var/lib/postgresql/data".format(self.install_dir)
+                        "{}/{}:/var/lib/postgresql/data".format(self.install_dir, self.psql_subdir)
                     ],
                     "network_mode": "host"
                 },
@@ -133,7 +150,8 @@ class Installer:
                     "image": "quay.io/coreos/etcd:v3.4.15",
                     "environment": [
                         "ALLOW_NONE_AUTHENTICATION=yes",
-                        "ETCD_NAME={}".format(self.git_name),
+                        "ETCD_ENABLE_V2=true",
+                        "ETCD_NAME={}".format(self.instance_name),
                         "ETCD_DATA_DIR=/etcd-data",
                         "ETCD_INITIAL_ADVERTISE_PEER_URLS=http://{}:2380".format(self.instance_ip),
                         "ETCD_LISTEN_PEER_URLS=http://{}:2380".format(self.instance_ip),
@@ -151,7 +169,7 @@ class Installer:
                     ],
                     "volumes": [
                         # mount etcd data directory
-                        "{}/etcd:/etcd-data".format(self.install_dir)
+                        "{}/{}:/etcd-data".format(self.install_dir, self.etcd_subdir)
                     ],
                     "network_mode": "host"
                 }
