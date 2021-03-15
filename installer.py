@@ -26,9 +26,17 @@ class Installer:
         self.install_dir = input("Enter MAO install directory: ")
         self.instance_name = input("Enter MAO instance name (must match operator provided name): ")
         self.instance_ip = input("Enter the public IP of the new MAO instance: ")
-        self.etcd_operator_input = input("Enter the operator provided etcd config: ")
         self.git_email = input("Enter your git config email address (used for MAO commits): ")
         self.ssh_key_dir = input("Enter directory containing ssh keys (used for git authentication): ")
+
+        # let user choose if we join an existing federation or install a standalone/new federation
+        _join_federation = Installer._ask_yes_no_question("Do you want to join an existing MAO federation?")
+        if _join_federation:
+            self.etcd_operator_input = input("Enter the operator provided etcd config: ")
+            self.etcd_cluster_state = "existing"
+        else:
+            self.etcd_operator_input = "{}=http://{}:2380".format(self.instance_name, self.instance_ip)
+            self.etcd_cluster_state = "new"
 
         # auto generated parameters
         _alphabet = string.ascii_letters + string.digits
@@ -51,6 +59,18 @@ class Installer:
         print("\nUse the following commands to get your MAO instance up and running:")
         print("\t$ cd {}".format(self.install_dir))
         print("\t$ docker-compose up")
+
+    @staticmethod
+    def _ask_yes_no_question(prompt):
+        
+        _answer = input("{} - [y/n]: ".format(prompt))
+        if _answer == "y":
+            return True
+        elif _answer == "n":
+            return False
+        else:
+            print("'{}' does not match the expected input of 'y' for yes and 'n' for no. Please try again...".format(_answer))
+            return Installer._ask_yes_no_question(prompt)
 
     def _create_install_directories(self):
         """Create directory structure and permissions for installation"""
@@ -165,7 +185,7 @@ class Installer:
                             port=self.etcd_client_port
                         ),
                         #"ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster",
-                        "ETCD_INITIAL_CLUSTER_STATE=existing",
+                        "ETCD_INITIAL_CLUSTER_STATE={}".format(self.etcd_cluster_state),
                         "ETCD_INITIAL_CLUSTER={}".format(self.etcd_operator_input)
                     ],
                     "volumes": [
