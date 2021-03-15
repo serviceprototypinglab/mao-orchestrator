@@ -24,7 +24,7 @@ class Installer:
             exit(1)
         
         self.install_dir = input("Enter MAO install directory: ")
-        self.instance_name = input("Enter MAO instance name: ")
+        self.instance_name = input("Enter MAO instance name (must match operator provided name): ")
         self.instance_ip = input("Enter the public IP of the new MAO instance: ")
         self.etcd_operator_input = input("Enter the operator provided etcd config: ")
         self.git_email = input("Enter your git config email address (used for MAO commits): ")
