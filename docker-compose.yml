@@ -56,7 +56,9 @@ services:
       # The name this node will be added to the cluster with
       - ETCD_NAME=etcd
       # Make sure this matches the volume
-      - DATA-DIR=/etcd-data
+      - ETCD_DATA_DIR=/etcd-data
+      # Enable v2 API explicitly on newer versions
+      - ETCD_ENABLE_V2=true
       # Endpoint the peers in the cluster will use to talk to this node
       - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://0.0.0.0:2380
       # Endpoint this node is listening at for peer requests
