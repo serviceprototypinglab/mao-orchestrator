@@ -122,7 +122,6 @@ class Installer:
                         "gitemail={}".format(self.git_email),
                         "gitusername={}".format(self.instance_name)
                     ],
-                    "ports": ["8080:8080"],
                     "volumes": [
                         # mount data directory from host
                         "{host_dir}/{host_subdir}:{container_dir}".format(
