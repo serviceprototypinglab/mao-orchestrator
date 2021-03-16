@@ -23,11 +23,12 @@ def list(key):
     qresult = []
     try:
         directory = client.get(key)
+
+        for result in directory.children:
+            qresult.append(result.key)
     except etcd.EtcdKeyNotFound:
         return qresult
-    
-    for result in directory.children:
-        qresult.append(result.key)
+
     return qresult
 
 
