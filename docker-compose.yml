@@ -46,7 +46,7 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=schedule
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - /home/panos/postgres-data:/var/lib/postgresql/data
     network_mode: "host"
   # The etcd node
   etcd:

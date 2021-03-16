@@ -15,6 +15,11 @@ echo "[WORKING_ENVIRONMENT]\n"\
 "host = $dbhost\n\n"\
 "[DATA_REPOS]" > config.ini
 
+until PGPASSWORD=$password psql -h "$dbhost" -U "$dbuser" -d "$db" -c '\q'; do
+  >&2 echo "Postgres is unavailable - sleeping"
+  sleep 1
+done
+
 echo "StrictHostKeyChecking no" >> /home/user/.ssh/config
 #echo "StrictHostKeyChecking no" >> /.ssh/config
 git config --global user.email $gitemail
