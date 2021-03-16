@@ -20,10 +20,15 @@ def write(key, value, ephemeral=False):
 
 
 def list(key):
-    directory = client.get(key)
     qresult = []
-    for result in directory.children:
-        qresult.append(result.key)
+    try:
+        directory = client.get(key)
+
+        for result in directory.children:
+            qresult.append(result.key)
+    except etcd.EtcdKeyNotFound:
+        return qresult
+
     return qresult
 
 
