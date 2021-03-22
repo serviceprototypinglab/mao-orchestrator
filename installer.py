@@ -20,7 +20,7 @@ class Installer:
         # check if all dependencies are installed
         _dep_installed, _dep_name = self._check_dependencies()
         if _dep_installed == False:
-            print("[Error] Missing MAO orchestrator dependency: {}".format(_dep_name))
+            print(f"[Error] Missing MAO orchestrator dependency: {_dep_name}")
             exit(1)
         
         self.install_dir = input("Enter MAO install directory: ")
@@ -35,7 +35,7 @@ class Installer:
             self.etcd_operator_input = input("Enter the operator provided etcd config: ")
             self.etcd_cluster_state = "existing"
         else:
-            self.etcd_operator_input = "{}=http://{}:2380".format(self.instance_name, self.instance_ip)
+            self.etcd_operator_input = f"{self.instance_name}=http://{self.instance_ip}:2380"
             self.etcd_cluster_state = "new"
 
         # auto generated parameters
@@ -52,24 +52,24 @@ class Installer:
         self._create_install_directories()
 
         # write generated docker-compose.yaml to install directory
-        with open("{}/docker-compose.yaml".format(self.install_dir), 'w') as file:
+        with open(f"{self.install_dir}/docker-compose.yaml", 'w') as file:
             yaml.dump(self._generate_compose(), file)
 
         print("\nMAO installer successfully finished!")
         print("\nUse the following commands to get your MAO instance up and running:")
-        print("\t$ cd {}".format(self.install_dir))
+        print(f"\t$ cd {self.install_dir}")
         print("\t$ docker-compose up")
 
     @staticmethod
     def _ask_yes_no_question(prompt):
         
-        _answer = input("{} - [y/n]: ".format(prompt))
+        _answer = input(f"{prompt} - [y/n]: ")
         if _answer == "y":
             return True
         elif _answer == "n":
             return False
         else:
-            print("'{}' does not match the expected input of 'y' for yes and 'n' for no. Please try again...".format(_answer))
+            print(f"'{_answer}' does not match the expected input of 'y' for yes and 'n' for no. Please try again...")
             return Installer._ask_yes_no_question(prompt)
 
     def _create_install_directories(self):
@@ -80,12 +80,12 @@ class Installer:
 
         try:
             Path(self.install_dir).mkdir(parents=True, exist_ok=True)
-            Path("{}/{}".format(self.install_dir, self.etcd_subdir)).mkdir(parents=True, exist_ok=True)
-            Path("{}/{}".format(self.install_dir, self.psql_subdir)).mkdir(parents=True, exist_ok=True)
-            Path("{}/{}".format(self.install_dir, self.mao_subdir)).mkdir(parents=True, exist_ok=True)
-            os.chown("{}/{}".format(self.install_dir, self.mao_subdir), _mao_uid, -1)
+            Path(f"{self.install_dir}/{self.etcd_subdir}").mkdir(parents=True, exist_ok=True)
+            Path(f"{self.install_dir}/{self.psql_subdir}").mkdir(parents=True, exist_ok=True)
+            Path(f"{self.install_dir}/{self.mao_subdir}").mkdir(parents=True, exist_ok=True)
+            os.chown(f"{self.install_dir}/{self.mao_subdir}", _mao_uid, -1)
         except PermissionError:
-            print("[Error] Permission to create directory '{}' denied.".format(self.install_dir))
+            print(f"[Error] Permission to create directory '{self.install_dir}' denied.")
             exit(1)
 
     def _check_dependencies(self):
@@ -109,28 +109,23 @@ class Installer:
                     # TODO switch to docker registry provided MAO image
                     "image": "local/mao",
                     "environment": [
-                        "importdir={}".format(self.import_dir),
-                        "hostdir={}/{}".format(self.install_dir, self.mao_subdir),
-                        "workuser={}".format(self.instance_name),
-                        "etcdhost={}".format(self.instance_ip),
-                        # TODO maybe witch to more speaking var names e.g. etcd_port?
-                        "port={}".format(self.etcd_client_port),
-                        "dbuser={}".format(self.scheduler_db),
-                        "password={}".format(self.scheduler_pw),
-                        "db={}".format(self.scheduler_db),
+                        f"importdir={self.import_dir}",
+                        f"hostdir={self.install_dir}/{self.mao_subdir}",
+                        f"workuser={self.instance_name}",
+                        f"etcdhost={self.instance_ip}",
+                        f"port={self.etcd_client_port}",
+                        f"dbuser={self.scheduler_db}",
+                        f"password={self.scheduler_pw}",
+                        f"db={self.scheduler_db}",
                         "dbhost=127.0.0.1",
-                        "gitemail={}".format(self.git_email),
-                        "gitusername={}".format(self.instance_name)
+                        f"gitemail={self.git_email}",
+                        f"gitusername={self.instance_name}"
                     ],
                     "volumes": [
                         # mount data directory from host
-                        "{host_dir}/{host_subdir}:{container_dir}".format(
-                            host_dir=self.install_dir,
-                            host_subdir=self.mao_subdir,
-                            container_dir=self.import_dir
-                        ),
+                        f"{self.install_dir}/{self.mao_subdir}:{self.import_dir}",
                         # mount git used ssh keys directory
-                        "{}:/home/user/.ssh".format(self.ssh_key_dir)
+                        f"{self.ssh_key_dir}:/home/user/.ssh"
                     ],
                     "network_mode": "host",
                     "depends_on": [
@@ -155,13 +150,13 @@ class Installer:
                 "db": {
                     "image": "postgres:13.2",
                     "environment": [
-                        "POSTGRES_DB={}".format(self.scheduler_db),
-                        "POSTGRES_PASSWORD={}".format(self.scheduler_pw),
-                        "POSTGRES_USER={}".format(self.scheduler_db)
+                        f"POSTGRES_DB={self.scheduler_db}",
+                        f"POSTGRES_PASSWORD={self.scheduler_pw}",
+                        f"POSTGRES_USER={self.scheduler_db}"
                     ],
                     "volumes": [
                         # mount postgresql data directory
-                        "{}/{}:/var/lib/postgresql/data".format(self.install_dir, self.psql_subdir)
+                        f"{self.install_dir}/{self.psql_subdir}:/var/lib/postgresql/data"
                     ],
                     "network_mode": "host"
                 },
@@ -171,25 +166,19 @@ class Installer:
                     "environment": [
                         "ALLOW_NONE_AUTHENTICATION=yes",
                         "ETCD_ENABLE_V2=true",
-                        "ETCD_NAME={}".format(self.instance_name),
+                        f"ETCD_NAME={self.instance_name}",
                         "ETCD_DATA_DIR=/etcd-data",
-                        "ETCD_INITIAL_ADVERTISE_PEER_URLS=http://{}:2380".format(self.instance_ip),
-                        "ETCD_LISTEN_PEER_URLS=http://{}:2380".format(self.instance_ip),
-                        "ETCD_LISTEN_CLIENT_URLS=http://{pub_ip}:{port}".format(
-                            pub_ip=self.instance_ip,
-                            port=self.etcd_client_port
-                        ),
-                        "ETCD_ADVERTISE_CLIENT_URLS=http://{pub_ip}:{port}".format(
-                            pub_ip=self.instance_ip,
-                            port=self.etcd_client_port
-                        ),
+                        f"ETCD_INITIAL_ADVERTISE_PEER_URLS=http://{self.instance_ip}:2380",
+                        f"ETCD_LISTEN_PEER_URLS=http://{self.instance_ip}:2380",
+                        f"ETCD_LISTEN_CLIENT_URLS=http://{self.instance_ip}:{self.etcd_client_port}",
+                        f"ETCD_ADVERTISE_CLIENT_URLS=http://{self.instance_ip}:{self.etcd_client_port}",
                         #"ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster",
-                        "ETCD_INITIAL_CLUSTER_STATE={}".format(self.etcd_cluster_state),
-                        "ETCD_INITIAL_CLUSTER={}".format(self.etcd_operator_input)
+                        f"ETCD_INITIAL_CLUSTER_STATE={self.etcd_cluster_state}",
+                        f"ETCD_INITIAL_CLUSTER={self.etcd_operator_input}"
                     ],
                     "volumes": [
                         # mount etcd data directory
-                        "{}/{}:/etcd-data".format(self.install_dir, self.etcd_subdir)
+                        f"{self.install_dir}/{self.etcd_subdir}:/etcd-data"
                     ],
                     "network_mode": "host"
                 }
