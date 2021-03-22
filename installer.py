@@ -14,7 +14,7 @@ class Installer:
     def __init__(self):
         pass
 
-    def run(self):
+    def install(self):
         """Runs the interactive installer CLI"""
 
         # check if all dependencies are installed
@@ -61,6 +61,9 @@ class Installer:
         print("\nUse the following commands to get your MAO instance up and running:")
         print(f"\t$ cd {self.install_dir}")
         print("\t$ docker-compose up")
+
+    def initialize(self):
+        print("Initialize instance...")
 
     @staticmethod
     def _ask_yes_no_question(prompt):

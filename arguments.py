@@ -28,6 +28,9 @@ class Arguments:
         remove_tools.add_argument('name', help="Name of the tool to unregister")
 
         # Installer commands
-        parser_install = subparsers.add_parser('install', help="Interactive MAO installer")
+        parser_instance = subparsers.add_parser('instance', help="Control MAO instance (e.g. install, init)")
+        instance_parsers = parser_instance.add_subparsers(help="Instance-related commands", dest="instance")
+        instance_install = instance_parsers.add_parser('install', help="Interactive MAO installer")
+        instance_init = instance_parsers.add_parser('init', help="Initialize MAO instance (e.g. schedule tools)")
 
         self.args = parser.parse_args()
