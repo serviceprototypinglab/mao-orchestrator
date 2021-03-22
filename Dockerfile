@@ -4,18 +4,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    openssh-server \
     openssh-client \
-    etcd-server \
-    etcd-client \
     python3 \
     python3-dev \
     python3-pip \
     python3-setuptools \
-    postgresql \
-    postgresql-contrib \
-    libpq-dev \
-    python3-venv \
+    postgresql-client \
  && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m user
