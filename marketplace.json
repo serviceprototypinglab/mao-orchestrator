@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Panos Linter",
+        "author": "Panos",
+        "image": "panos/linter",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/foo/bardata",
+        "artefact": "source_code",
+        "description": "A Linting Tool"
+    },
+    {
+        "name": "Daniel Sec Scanner",
+        "author": "Daniel",
+        "image": "daniel/security-scanner",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/foo/bardata",
+        "artefact": "docker_images",
+        "description": "A Docker image security scanner"
+    }
+]

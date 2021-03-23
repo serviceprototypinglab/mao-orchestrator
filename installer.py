@@ -3,6 +3,7 @@ import secrets
 import string
 import os
 import requests
+import json
 
 from pathlib import Path
 from shutil import which
@@ -12,6 +13,21 @@ class MaoClient:
     _URL = "http://127.0.0.1:8080"
     _URL_TOOLS = "registry/tools"
 
+    class MaoTool:
+
+        def __init__(self, name, image, author=None, description=None,
+                        data_repo=None, code_repo=None, artefact=None,
+                        federation_registered=False, instance_scheduled=False):
+            self.name = name
+            self.image = image
+            self.author = author
+            self.data_repo = data_repo
+            self.code_repo = code_repo
+            self.artefact = artefact
+            self.description = description
+            self.federation_registered = federation_registered
+            self.instance_scheduled = instance_scheduled
+
     @staticmethod
     def _remove_prefix(path):
         """Removed prefixed from absolute etcd paths"""
@@ -19,7 +35,7 @@ class MaoClient:
         _last_index = len(_result)-1
         return _result[_last_index]
 
-    def get_tools(self):
+    def _api_get_tools(self):
         """Returns a list of tools registered with MAO"""
         r = requests.get(f"{self._URL}/{self._URL_TOOLS}")
         _tools = r.json()
@@ -28,11 +44,29 @@ class MaoClient:
             _result.append(MaoClient._remove_prefix(tool))
         return(_result)
 
-    def get_tool(self, name):
+    def _api_get_tool(self, name):
         """Returns detailed configuration of a single MAO tool"""
         r = requests.get(f"{self._URL}/{self._URL_TOOLS}/{name}")
         _tool = r.json()
         return(_tool)
+
+    def get_tools(self):
+        tools = []
+        _tool_names = self._api_get_tools()
+        for tool_name in _tool_names:
+            _tool_result = json.loads(self._api_get_tool(tool_name))
+            tool = MaoClient.MaoTool(
+                tool_name,
+                _tool_result['image'],
+                author=_tool_result['author'],
+                data_repo=_tool_result['data_repo'],
+                code_repo=_tool_result['code_repo'],
+                artefact=_tool_result['artefact'],
+                federation_registered=True
+            )
+            tools.append(tool)
+        
+        return tools
 
 class Installer:
 
@@ -92,11 +126,59 @@ class Installer:
 
     def initialize(self):
         mao = MaoClient()
-        _tools = mao.get_tools()
+        # get MAO tools from different sources
+        # get tools from current federation
+        _tools_fed = mao.get_tools()
+        # get tools from marketplace
+        _tools_market = self._get_marketplace()
         print("Initialize instance...")
-        print(f"tools: {_tools}")
-        for tool in _tools:
-            print(mao.get_tool(tool))
+        print("\nAvailable MAO Tools:")
+        # print tools
+        Installer._print_tools(_tools_fed)
+
+        print("\nPlease select tools for activate on current instance (e.g. 1 2 4):")
+        _selected_tools = input()
+        try:
+            Installer._parse_tool_selection_input(_selected_tools)
+        except TypeError as e:
+            print(e)
+            exit(1)
+        
+    def _get_marketplace(self):
+        """Read current selection of tools from MAO marketplace"""
+        # TODO replace if query of actual marketplace, currently mocked via JSON file
+
+        with open('marketplace.json') as marketplace_file:
+            tools = json.load(marketplace_file)
+            result = []
+            for tool in tools:
+                tool = MaoClient.MaoTool(
+                    tool['name'],
+                    tool['image'],
+                    author=tool['author'],
+                    data_repo=tool['data_repo'],
+                    code_repo=tool['code_repo'],
+                    artefact=tool['artefact'],
+                    description=tool['description']
+                )
+                result.append(tool)
+            return result
+
+    @staticmethod
+    def _parse_tool_selection_input(input):
+        _input = input.split(" ")
+        _result = []
+        for number in _input:
+            # check if numeric
+            if number.isnumeric():
+                _result.append(int(number))
+            else:
+                raise TypeError(f"Invalid input, {number} is not a number!")
+
+    @staticmethod
+    def _print_tools(tools):
+        for i, tool in enumerate(tools):
+            print(f"[{i}] {tool.name}, frederation ✓, instance ✗")
 
     @staticmethod
     def _ask_yes_no_question(prompt):
