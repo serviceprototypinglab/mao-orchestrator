@@ -2,9 +2,37 @@ import yaml
 import secrets
 import string
 import os
+import requests
 
 from pathlib import Path
 from shutil import which
+
+class MaoClient:
+
+    _URL = "http://127.0.0.1:8080"
+    _URL_TOOLS = "registry/tools"
+
+    @staticmethod
+    def _remove_prefix(path):
+        """Removed prefixed from absolute etcd paths"""
+        _result = path.split('/')
+        _last_index = len(_result)-1
+        return _result[_last_index]
+
+    def get_tools(self):
+        """Returns a list of tools registered with MAO"""
+        r = requests.get(f"{self._URL}/{self._URL_TOOLS}")
+        _tools = r.json()
+        _result = []
+        for tool in _tools:
+            _result.append(MaoClient._remove_prefix(tool))
+        return(_result)
+
+    def get_tool(self, name):
+        """Returns detailed configuration of a single MAO tool"""
+        r = requests.get(f"{self._URL}/{self._URL_TOOLS}/{name}")
+        _tool = r.json()
+        return(_tool)
 
 class Installer:
 
@@ -63,7 +91,12 @@ class Installer:
         print("\t$ docker-compose up")
 
     def initialize(self):
+        mao = MaoClient()
+        _tools = mao.get_tools()
         print("Initialize instance...")
+        print(f"tools: {_tools}")
+        for tool in _tools:
+            print(mao.get_tool(tool))
 
     @staticmethod
     def _ask_yes_no_question(prompt):
