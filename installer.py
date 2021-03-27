@@ -5,28 +5,27 @@ import os
 import requests
 import json
 
+from typing import List
 from pathlib import Path
 from shutil import which
+from marshmallow import Schema, fields, post_load
+import marshmallow_objects as marshmallow
 
 class MaoClient:
 
     _URL = "http://127.0.0.1:8080"
     _URL_TOOLS = "registry/tools"
 
-    class MaoTool:
-
-        def __init__(self, name, image, author=None, description=None,
-                        data_repo=None, code_repo=None, artefact=None,
-                        federation_registered=False, instance_scheduled=False):
-            self.name = name
-            self.image = image
-            self.author = author
-            self.data_repo = data_repo
-            self.code_repo = code_repo
-            self.artefact = artefact
-            self.description = description
-            self.federation_registered = federation_registered
-            self.instance_scheduled = instance_scheduled
+    class MaoTool(marshmallow.Model):
+        name = fields.Str(required=True)
+        image = fields.Str(required=True)
+        author = fields.Str()
+        data_repo = fields.URL()
+        code_repo = fields.URL()
+        artefact = fields.Str()
+        description = fields.Str()
+        federation_registered = fields.Bool(missing=False)
+        instance_scheduled = fields.Bool(missing=False)
 
     @staticmethod
     def _remove_prefix(path):
@@ -47,23 +46,16 @@ class MaoClient:
     def _api_get_tool(self, name):
         """Returns detailed configuration of a single MAO tool"""
         r = requests.get(f"{self._URL}/{self._URL_TOOLS}/{name}")
-        _tool = r.json()
+        _tool = json.loads(r.json())
         return(_tool)
 
     def get_tools(self):
         tools = []
         _tool_names = self._api_get_tools()
         for tool_name in _tool_names:
-            _tool_result = json.loads(self._api_get_tool(tool_name))
-            tool = MaoClient.MaoTool(
-                tool_name,
-                _tool_result['image'],
-                author=_tool_result['author'],
-                data_repo=_tool_result['data_repo'],
-                code_repo=_tool_result['code_repo'],
-                artefact=_tool_result['artefact'],
-                federation_registered=True
-            )
+            _result = self._api_get_tool(tool_name)
+            _result['name'] = tool_name
+            tool = MaoClient.MaoTool.load(_result)
             tools.append(tool)
         
         return tools
@@ -129,12 +121,17 @@ class Installer:
         # get MAO tools from different sources
         # get tools from current federation
         _tools_fed = mao.get_tools()
+        for tool in _tools_fed:
+            tool.federation_registered = True
         # get tools from marketplace
         _tools_market = self._get_marketplace()
+        _tools = Installer._merge_tools(_tools_fed, _tools_market)
+
+        # display tool selection on CLI
         print("Initialize instance...")
         print("\nAvailable MAO Tools:")
         # print tools
-        Installer._print_tools(_tools_fed)
+        Installer._print_tools(_tools)
 
         print("\nPlease select tools for activate on current instance (e.g. 1 2 4):")
         _selected_tools = input()
@@ -143,6 +140,16 @@ class Installer:
         except TypeError as e:
             print(e)
             exit(1)
+
+    @staticmethod
+    def _merge_tools(base: List[MaoClient.MaoTool], additional: List[MaoClient.MaoTool]):
+        # https://stackoverflow.com/a/58913412
+        # generate base dict from input
+        tools = {t.name: t for t in base}
+        for tool in additional:
+            if tool.name not in tools:
+                tools[tool.name] = tool
+        return tools.values()
         
     def _get_marketplace(self):
         """Read current selection of tools from MAO marketplace"""
@@ -152,15 +159,7 @@ class Installer:
             tools = json.load(marketplace_file)
             result = []
             for tool in tools:
-                tool = MaoClient.MaoTool(
-                    tool['name'],
-                    tool['image'],
-                    author=tool['author'],
-                    data_repo=tool['data_repo'],
-                    code_repo=tool['code_repo'],
-                    artefact=tool['artefact'],
-                    description=tool['description']
-                )
+                tool = MaoClient.MaoTool.load(tool)
                 result.append(tool)
             return result
 
@@ -178,7 +177,13 @@ class Installer:
     @staticmethod
     def _print_tools(tools):
         for i, tool in enumerate(tools):
-            print(f"[{i}] {tool.name}, frederation ✓, instance ✗")
+            print(f"[{i}] {tool.name}, " \
+                f"frederation {Installer._print_boolean_symbol(tool.federation_registered)}, " \
+                f"instance {Installer._print_boolean_symbol(tool.instance_scheduled)}")
+
+    @staticmethod
+    def _print_boolean_symbol(bool: bool):
+        return '✓' if bool else '✗'
 
     @staticmethod
     def _ask_yes_no_question(prompt):

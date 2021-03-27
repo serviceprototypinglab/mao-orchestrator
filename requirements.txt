@@ -9,3 +9,5 @@ psycopg2-binary
 pandas
 numpy
 pyyaml
+marshmallow
+marshmallow_objects

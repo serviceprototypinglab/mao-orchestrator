@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 bootstrap.sh
 *.json
+!marketplace.json
 *.csv
 infile/
 .vscode/
