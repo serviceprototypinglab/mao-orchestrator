@@ -178,7 +178,7 @@ class Installer:
     def _print_tools(tools):
         for i, tool in enumerate(tools):
             print(f"[{i}] {tool.name}, " \
-                f"frederation {Installer._print_boolean_symbol(tool.federation_registered)}, " \
+                f"federation {Installer._print_boolean_symbol(tool.federation_registered)}, " \
                 f"instance {Installer._print_boolean_symbol(tool.instance_scheduled)}")
 
     @staticmethod
