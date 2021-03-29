@@ -13,7 +13,8 @@ def pipeline_run(image, data_dir):
     print(f"Running image {image} with dir {data_dir}")
     docker_client.containers.run(image,
                              volumes={data_dir: {'bind': '/usr/src/app/data'}},
-                             network='host')
+                             network='host',
+                             auto_remove=True)
     print("Done")
     return {"image_used": image, "data_dir": data_dir}
 
