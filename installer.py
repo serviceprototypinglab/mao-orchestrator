@@ -47,40 +47,56 @@ class MaoClient:
 
     @staticmethod
     def _remove_prefix(path):
-        """Removed prefixed from absolute etcd paths"""
+        """Removes prefixed from absolute etcd paths"""
         _result = path.split('/')
         _last_index = len(_result)-1
         return _result[_last_index]
 
     def _api_get_tools(self):
         """Returns a list of tools registered with MAO"""
-        r = requests.get(f"{self._URL}/{self._URL_TOOLS}")
-        _tools = r.json()
-        _result = []
-        for tool in _tools:
-            _result.append(MaoClient._remove_prefix(tool))
-        return(_result)
+        try:
+            r = requests.get(f"{self._URL}/{self._URL_TOOLS}")
+            r.raise_for_status()
+            _tools = r.json()
+            _result = []
+            for tool in _tools:
+                _result.append(MaoClient._remove_prefix(tool))
+            return(_result)
+        except HTTPError as e:
+            print(e)
 
     def _api_get_tool(self, name):
         """Returns detailed configuration of a single MAO tool"""
-        r = requests.get(f"{self._URL}/{self._URL_TOOLS}/{name}")
-        _tool = json.loads(r.json())
-        return(_tool)
+        try:
+            r = requests.get(f"{self._URL}/{self._URL_TOOLS}/{name}")
+            r.raise_for_status()
+            _tool = json.loads(r.json())
+            return(_tool)
+        except HTTPError as e:
+            print(e)
 
     def _api_get_datasets(self):
         """Returns a list of datasets registered with MAO"""
-        r = requests.get(f"{self._URL}/{self._URL_DATASETS}")
-        _datasets = r.json()
-        _result = []
-        for dataset in _datasets:
-            _result.append(MaoClient._remove_prefix(dataset))
-        return(_result)
+        try:
+            r = requests.get(f"{self._URL}/{self._URL_DATASETS}")
+            r.raise_for_status()
+            _datasets = r.json()
+            _result = []
+            for dataset in _datasets:
+                _result.append(MaoClient._remove_prefix(dataset))
+            return(_result)
+        except HTTPError as e:
+            print(e)
 
     def _api_get_dataset(self, name):
         """Returns detailed configuration of a single MAO tool"""
-        r = requests.get(f"{self._URL}/{self._URL_DATASETS}/{name}")
-        _dataset = json.loads(r.json())
-        return(_dataset)
+        try:
+            r = requests.get(f"{self._URL}/{self._URL_DATASETS}/{name}")
+            r.raise_for_status()
+            _dataset = json.loads(r.json())
+            return(_dataset)
+        except HTTPError as e:
+            print(e)
 
     def _api_add_tool(self, tool: dict):
         try:
