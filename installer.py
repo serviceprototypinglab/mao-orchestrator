@@ -6,7 +6,7 @@ import requests
 import json
 import numpy as np
 
-from operator import itemgetter
+from apscheduler.triggers.cron import CronTrigger
 from typing import List
 from pathlib import Path
 from shutil import which
@@ -25,8 +25,10 @@ class MaoClient:
         name = fields.Str(required=True)
         image = fields.Str(required=True)
         author = fields.Str()
-        data_repo = fields.URL()
-        code_repo = fields.URL()
+        # fields.Url does not work here for repo URL as we can also have SSH endpints
+        # e.g. git@my.git-server.com/project1
+        data_repo = fields.Str()
+        code_repo = fields.Str()
         artefact = fields.Str()
         # TODO maybe remove load_only from description in future
         description = fields.Str(load_only=False)
@@ -41,6 +43,7 @@ class MaoClient:
     class MaoPipeline(marshmallow.Model):
         tool = fields.Str(required=True)
         dataset = fields.Str(required=True)
+        cron = fields.Str(load_only=True)
 
     @staticmethod
     def _remove_prefix(path):
@@ -92,6 +95,16 @@ class MaoClient:
             r.raise_for_status()
         except HTTPError as e:
             print(e)
+    
+    def _api_run_pipeline(self, name: str, cron: str):
+        try:
+            r = requests.post(f"{self._URL}/{self._URL_PIPELINE}/run", json={
+                "name": name,
+                "cron": cron
+            })
+            r.raise_for_status()
+        except HTTPError as e:
+            print(e)
 
     def get_tools(self):
         tools = []
@@ -120,6 +133,9 @@ class MaoClient:
     def init_pipeline(self, pipeline: MaoPipeline):
         serialized_pipeline = MaoClient.MaoPipeline.dump(pipeline)
         self._api_init_pipeline(serialized_pipeline)
+
+    def run_pipeline(self, pipeline: MaoPipeline):
+        self._api_run_pipeline(pipeline.tool, pipeline.cron)
 
 class Installer:
 
@@ -217,7 +233,18 @@ class Installer:
                 _pipeline = MaoClient.MaoPipeline(tool=selected.name, dataset=_selected_dataset.name)
                 self.mao.init_pipeline(_pipeline)
 
-        except (TypeError, IndexError) as e:
+                # run/schedule pipeline
+                # ask user to enter cron schedule for tool
+                print(f"Please enter crontab to schedule {selected.name} (e.g. '0 12 * * *'):")
+                _input = input()
+                print("") # insert blank line
+                _cron = Installer._parse_cron(_input)
+                _pipeline.cron = _cron
+
+                self.mao.run_pipeline(_pipeline)
+
+
+        except (TypeError, IndexError, ValueError) as e:
             print(e)
             exit(1)
 
@@ -276,6 +303,15 @@ class Installer:
             _available_indexes = list(range(0, len(selection_base)-1))
             raise IndexError(f"Input '{input}' is not one of {_available_indexes}")
         return int(input)
+
+    @staticmethod
+    def _parse_cron(input):
+        try:
+            # use apscheduler CronTrigger for crontab syntax validation
+            CronTrigger.from_crontab(input)
+            return input
+        except ValueError as e:
+            raise ValueError(f"Input is not a valid crontab - {e}")
 
     @staticmethod
     def _print_tools(tools):
