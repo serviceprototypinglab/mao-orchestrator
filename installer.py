@@ -10,6 +10,7 @@ from pathlib import Path
 from shutil import which
 from marshmallow import Schema, fields, post_load
 import marshmallow_objects as marshmallow
+from requests.exceptions import HTTPError
 
 class MaoClient:
 
@@ -23,9 +24,10 @@ class MaoClient:
         data_repo = fields.URL()
         code_repo = fields.URL()
         artefact = fields.Str()
-        description = fields.Str()
-        federation_registered = fields.Bool(missing=False)
-        instance_scheduled = fields.Bool(missing=False)
+        # TODO maybe remove load_only from description in future
+        description = fields.Str(load_only=False)
+        federation_registered = fields.Bool(missing=False, load_only=True)
+        instance_scheduled = fields.Bool(missing=False, load_only=True)
 
     @staticmethod
     def _remove_prefix(path):
@@ -49,6 +51,13 @@ class MaoClient:
         _tool = json.loads(r.json())
         return(_tool)
 
+    def _api_add_tool(self, tool: dict):
+        try:
+            r = requests.post(f"{self._URL}/{self._URL_TOOLS}", json=tool)
+            r.raise_for_status()
+        except HTTPError as e:
+            print(e)
+
     def get_tools(self):
         tools = []
         _tool_names = self._api_get_tools()
@@ -60,13 +69,17 @@ class MaoClient:
         
         return tools
 
+    def add_tool(self, tool: MaoTool):
+        serialized_tool = MaoClient.MaoTool.dump(tool)
+        self._api_add_tool(serialized_tool)
+
 class Installer:
 
     # MAO orchestrator dependencies
     dependencies = ['docker', 'docker-compose']
 
     def __init__(self):
-        pass
+        self.mao = MaoClient()
 
     def install(self):
         """Runs the interactive installer CLI"""
@@ -117,10 +130,9 @@ class Installer:
         print("\t$ docker-compose up")
 
     def initialize(self):
-        mao = MaoClient()
         # get MAO tools from different sources
         # get tools from current federation
-        _tools_fed = mao.get_tools()
+        _tools_fed = self.mao.get_tools()
         for tool in _tools_fed:
             tool.federation_registered = True
         # get tools from marketplace
@@ -134,9 +146,11 @@ class Installer:
         Installer._print_tools(_tools)
 
         print("\nPlease select tools for activate on current instance (e.g. 1 2 4):")
-        _selected_tools = input()
+        _input = input()
         try:
-            Installer._parse_tool_selection_input(_selected_tools)
+            _selected_tools = Installer._parse_tool_selection_input(_input)
+            for selected in _selected_tools:
+                self._add_tool_to_instance(_tools[selected])
         except TypeError as e:
             print(e)
             exit(1)
@@ -149,7 +163,16 @@ class Installer:
         for tool in additional:
             if tool.name not in tools:
                 tools[tool.name] = tool
-        return tools.values()
+        return list(tools.values())
+
+    def _add_tool_to_instance(self, tool: MaoClient.MaoTool):
+        """Adds MAO tool to current instance"""
+
+        if not tool.federation_registered:
+            # tool not existing in federation, add it
+            self.mao.add_tool(tool)
+
+        
         
     def _get_marketplace(self):
         """Read current selection of tools from MAO marketplace"""
@@ -173,6 +196,7 @@ class Installer:
                 _result.append(int(number))
             else:
                 raise TypeError(f"Invalid input, {number} is not a number!")
+        return _result
 
     @staticmethod
     def _print_tools(tools):
