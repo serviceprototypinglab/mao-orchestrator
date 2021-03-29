@@ -28,7 +28,7 @@ async def datasets(request):
 
 @routes.get('/registry/datasets/{dataset}')
 async def datasets(request):
-    return web.json_response(etcd_client.get(f"dataset/{request.match_info['dataset']}/{request.match_info['node']}"))
+    return web.json_response(etcd_client.get(f"dataset/{request.match_info['dataset']}"))
 
 
 @routes.get('/jobs')
@@ -71,7 +71,9 @@ async def register(request):
 @routes.post('/registry/datasets')
 async def register(request):
     data = await request.json()
-    etcd_client.write("dataset/{}".format(data['name']), data['body'])
+    # TODO check with Panos: quotes handling inside etcd
+    body = json.dumps(data['body'])
+    etcd_client.write("dataset/{}".format(data['name']), body)
     return web.json_response(etcd_client.get("dataset/{}".format(data['name'])))
 
 # Create the node branch, register and create pipeline config

@@ -72,7 +72,8 @@ def pipeline_init(tool, dataset, env=None, cmd=None, docker_socket=False):
     os.chdir(old_wd)
     # Register the branch
     dataset_dict['nodes'].append(branch_name)
-    write(f"dataset/{dataset}", dataset_dict)
+    # TODO check with Panos: quotes handling inside etcd
+    write(f"dataset/{dataset}", json.dumps(dataset_dict))
     # Save the association tool + branch on node (including local path)
     pipeline = {
         "tool": tool,
