@@ -27,4 +27,7 @@ class Arguments:
         remove_tools = tool_parsers.add_parser('remove', help="Unregister a tool")
         remove_tools.add_argument('name', help="Name of the tool to unregister")
 
+        # Installer commands
+        parser_install = subparsers.add_parser('install', help="Interactive MAO installer")
+
         self.args = parser.parse_args()

@@ -1,5 +1,6 @@
 import arguments
 import requests
+from installer import Installer
 
 
 def get_tools(*args):
@@ -55,3 +56,5 @@ if __name__ == '__main__':
             list_scheduled()
         elif args.tool == 'stop':
             stop(args.id)
+    elif args.command == 'install':
+        Installer().run()
