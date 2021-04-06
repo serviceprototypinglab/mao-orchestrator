@@ -21,7 +21,7 @@ class MaoClient:
     _URL_DATASETS = "registry/datasets"
     _URL_PIPELINE = "pipeline"
 
-    class MaoTool(marshmallow.Model):
+    class Tool(marshmallow.Model):
         name = fields.Str(required=True)
         image = fields.Str(required=True)
         author = fields.Str()
@@ -35,15 +35,114 @@ class MaoClient:
         federation_registered = fields.Bool(missing=False, load_only=True)
         instance_scheduled = fields.Bool(missing=False, load_only=True)
 
-    class MaoDataset(marshmallow.Model):
+        @staticmethod
+        def _api_get_tools():
+            """Returns a list of tools registered with MAO"""
+            try:
+                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_TOOLS}")
+                r.raise_for_status()
+                _tools = r.json()
+                _result = []
+                for tool in _tools:
+                    _result.append(MaoClient._remove_prefix(tool))
+                return(_result)
+            except HTTPError as e:
+                print(e)
+
+        @staticmethod
+        def _api_get_tool(name: str):
+            """Returns detailed configuration of a single MAO tool"""
+            try:
+                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_TOOLS}/{name}")
+                r.raise_for_status()
+                _tool = json.loads(r.json())
+                return(_tool)
+            except HTTPError as e:
+                print(e)
+
+        @classmethod
+        def list(cls):
+            tools = []
+            _tool_names = cls._api_get_tools()
+            for tool_name in _tool_names:
+                _result = cls._api_get_tool(tool_name)
+                _result['name'] = tool_name
+                tool = cls.load(_result)
+                tools.append(tool)
+            return tools
+
+        def add(self):
+            _tool = self.dump()
+            try:
+                r = requests.post(f"{MaoClient._URL}/{MaoClient._URL_TOOLS}", json=_tool)
+                r.raise_for_status()
+            except HTTPError as e:
+                print(e)
+
+    class Dataset(marshmallow.Model):
         name = fields.Str(required=True)
         master = fields.Str(required=True)
         nodes = fields.List(fields.Str(), required=True)
 
-    class MaoPipeline(marshmallow.Model):
+        @staticmethod
+        def _api_get_dataset(name):
+            """Returns detailed configuration of a single MAO tool"""
+            try:
+                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_DATASETS}/{name}")
+                r.raise_for_status()
+                _dataset = json.loads(r.json())
+                return(_dataset)
+            except HTTPError as e:
+                print(e)
+
+        @staticmethod
+        def _api_get_datasets():
+            """Returns a list of datasets registered with MAO"""
+            try:
+                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_DATASETS}")
+                r.raise_for_status()
+                _datasets = r.json()
+                _result = []
+                for dataset in _datasets:
+                    _result.append(MaoClient._remove_prefix(dataset))
+                return(_result)
+            except HTTPError as e:
+                print(e)
+        
+        @classmethod
+        def list(cls):
+            datasets = []
+            _dataset_names = cls._api_get_datasets()
+            for dataset_name in _dataset_names:
+                _result = cls._api_get_dataset(dataset_name)
+                _result['name'] = dataset_name
+                dataset = cls.load(_result)
+                datasets.append(dataset)
+            return datasets
+
+    class Pipeline(marshmallow.Model):
         tool = fields.Str(required=True)
         dataset = fields.Str(required=True)
         cron = fields.Str(load_only=True)
+
+        def init(self):
+            _pipeline = self.dump()
+            try:
+                r = requests.post(f"{MaoClient._URL}/{MaoClient._URL_PIPELINE}/init", json=_pipeline)
+                r.raise_for_status()
+            except HTTPError as e:
+                print(e)
+
+        def run(self, cron: str):
+            _pipeline = self.dump()
+            try:
+                r = requests.post(f"{MaoClient._URL}/{MaoClient._URL_PIPELINE}/run", json={
+                    "name": _pipeline['tool'],
+                    "cron": cron
+                })
+                r.raise_for_status()
+            except HTTPError as e:
+                print(e)
 
     @staticmethod
     def _remove_prefix(path):
@@ -51,107 +150,6 @@ class MaoClient:
         _result = path.split('/')
         _last_index = len(_result)-1
         return _result[_last_index]
-
-    def _api_get_tools(self):
-        """Returns a list of tools registered with MAO"""
-        try:
-            r = requests.get(f"{self._URL}/{self._URL_TOOLS}")
-            r.raise_for_status()
-            _tools = r.json()
-            _result = []
-            for tool in _tools:
-                _result.append(MaoClient._remove_prefix(tool))
-            return(_result)
-        except HTTPError as e:
-            print(e)
-
-    def _api_get_tool(self, name):
-        """Returns detailed configuration of a single MAO tool"""
-        try:
-            r = requests.get(f"{self._URL}/{self._URL_TOOLS}/{name}")
-            r.raise_for_status()
-            _tool = json.loads(r.json())
-            return(_tool)
-        except HTTPError as e:
-            print(e)
-
-    def _api_get_datasets(self):
-        """Returns a list of datasets registered with MAO"""
-        try:
-            r = requests.get(f"{self._URL}/{self._URL_DATASETS}")
-            r.raise_for_status()
-            _datasets = r.json()
-            _result = []
-            for dataset in _datasets:
-                _result.append(MaoClient._remove_prefix(dataset))
-            return(_result)
-        except HTTPError as e:
-            print(e)
-
-    def _api_get_dataset(self, name):
-        """Returns detailed configuration of a single MAO tool"""
-        try:
-            r = requests.get(f"{self._URL}/{self._URL_DATASETS}/{name}")
-            r.raise_for_status()
-            _dataset = json.loads(r.json())
-            return(_dataset)
-        except HTTPError as e:
-            print(e)
-
-    def _api_add_tool(self, tool: dict):
-        try:
-            r = requests.post(f"{self._URL}/{self._URL_TOOLS}", json=tool)
-            r.raise_for_status()
-        except HTTPError as e:
-            print(e)
-
-    def _api_init_pipeline(self, pipeline: dict):
-        try:
-            r = requests.post(f"{self._URL}/{self._URL_PIPELINE}/init", json=pipeline)
-            r.raise_for_status()
-        except HTTPError as e:
-            print(e)
-    
-    def _api_run_pipeline(self, name: str, cron: str):
-        try:
-            r = requests.post(f"{self._URL}/{self._URL_PIPELINE}/run", json={
-                "name": name,
-                "cron": cron
-            })
-            r.raise_for_status()
-        except HTTPError as e:
-            print(e)
-
-    def get_tools(self):
-        tools = []
-        _tool_names = self._api_get_tools()
-        for tool_name in _tool_names:
-            _result = self._api_get_tool(tool_name)
-            _result['name'] = tool_name
-            tool = MaoClient.MaoTool.load(_result)
-            tools.append(tool)
-        return tools
-
-    def get_datasets(self):
-        datasets = []
-        _dataset_names = self._api_get_datasets()
-        for dataset_name in _dataset_names:
-            _result = self._api_get_dataset(dataset_name)
-            _result['name'] = dataset_name
-            dataset = MaoClient.MaoDataset.load(_result)
-            datasets.append(dataset)
-        return datasets
-
-    def add_tool(self, tool: MaoTool):
-        serialized_tool = MaoClient.MaoTool.dump(tool)
-        self._api_add_tool(serialized_tool)
-
-    def init_pipeline(self, pipeline: MaoPipeline):
-        serialized_pipeline = MaoClient.MaoPipeline.dump(pipeline)
-        self._api_init_pipeline(serialized_pipeline)
-
-    def run_pipeline(self, pipeline: MaoPipeline):
-        self._api_run_pipeline(pipeline.tool, pipeline.cron)
 
 class Installer:
 
@@ -212,7 +210,7 @@ class Installer:
     def initialize(self):
         # get MAO tools from different sources
         # get tools from current federation
-        _tools_fed = self.mao.get_tools()
+        _tools_fed = self.mao.Tool.list()
         for tool in _tools_fed:
             tool.federation_registered = True
         # get tools from marketplace
@@ -230,13 +228,14 @@ class Installer:
         print("") # insert blank line
         try:
             _selected_tools = Installer._parse_numeric_multi(_input, _tools)
-            _datasets = self.mao.get_datasets()
+            _datasets = self.mao.Dataset.list()
             # loop over select tool indexes
             for selected in list(_tools[_selected_tools]):
                 print(f"> Registering tool {selected.name}")
                 # make sure tool is registered with federation
-                self._add_tool_to_instance(selected)
-
+                if not selected.federation_registered:
+                    selected.add()
+                
                 # dataset handling
                 print("Available datasets:")
                 Installer._print_datasets(_datasets)
@@ -246,8 +245,9 @@ class Installer:
                 _selected_dataset = _datasets[Installer._parse_numeric_single(_input, _datasets)]
 
                 # initialize pipeline
-                _pipeline = MaoClient.MaoPipeline(tool=selected.name, dataset=_selected_dataset.name)
-                self.mao.init_pipeline(_pipeline)
+                _pipeline = MaoClient.Pipeline(tool=selected.name, dataset=_selected_dataset.name)
+                _pipeline.init()
+                #self.mao.init_pipeline(_pipeline)
 
                 # run/schedule pipeline
                 # ask user to enter cron schedule for tool
@@ -255,9 +255,9 @@ class Installer:
                 _input = input()
                 print("") # insert blank line
                 _cron = Installer._parse_cron(_input)
-                _pipeline.cron = _cron
 
-                self.mao.run_pipeline(_pipeline)
+                _pipeline.run(_cron)
+                #self.mao.run_pipeline(_pipeline)
 
 
         except (TypeError, IndexError, ValueError) as e:
@@ -265,7 +265,7 @@ class Installer:
             exit(1)
 
     @staticmethod
-    def _merge_tools(base: List[MaoClient.MaoTool], additional: List[MaoClient.MaoTool]):
+    def _merge_tools(base: List[MaoClient.Tool], additional: List[MaoClient.Tool]):
         # https://stackoverflow.com/a/58913412
         # generate base dict from input
         tools = {t.name: t for t in base}
@@ -273,13 +273,6 @@ class Installer:
             if tool.name not in tools:
                 tools[tool.name] = tool
         return list(tools.values())
-
-    def _add_tool_to_instance(self, tool: MaoClient.MaoTool):
-        """Adds MAO tool to current instance"""
-
-        if not tool.federation_registered:
-            # tool not existing in federation, add it
-            self.mao.add_tool(tool)
 
     def _get_marketplace(self):
         """Read current selection of tools from MAO marketplace"""
@@ -289,7 +282,7 @@ class Installer:
             tools = json.load(marketplace_file)
             result = []
             for tool in tools:
-                tool = MaoClient.MaoTool.load(tool)
+                tool = MaoClient.Tool.load(tool)
                 result.append(tool)
             return result
 
@@ -337,7 +330,7 @@ class Installer:
                 f"instance {Installer._print_boolean_symbol(tool.instance_scheduled)}")
     
     @staticmethod
-    def _print_datasets(datasets: List[MaoClient.MaoDataset]):
+    def _print_datasets(datasets: List[MaoClient.Dataset]):
         for i, dataset in enumerate(datasets):
             print(f"[{i}] {dataset.name}, " \
                 f"{dataset.master}, " \
