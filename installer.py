@@ -49,6 +49,8 @@ class Installer:
         self.psql_subdir = "psql"
 
         # create MAO install directory
+        # allow for shell-like shortcuts in path - returns absolute path
+        self.install_dir = os.path.expanduser(self.install_dir)
         self._create_install_directories()
 
         # write generated docker-compose.yaml to install directory
