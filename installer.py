@@ -16,6 +16,7 @@ from requests.exceptions import HTTPError
 
 class MaoClient:
 
+    # TODO maybe make _URL configurable
     _URL = "http://127.0.0.1:8080"
     _URL_TOOLS = "registry/tools"
     _URL_DATASETS = "registry/datasets"
@@ -37,7 +38,7 @@ class MaoClient:
 
         @staticmethod
         def _api_get_tools():
-            """Returns a list of tools registered with MAO"""
+            """Returns a list of tools registered with MAO from the API"""
             try:
                 r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_TOOLS}")
                 r.raise_for_status()
@@ -62,6 +63,7 @@ class MaoClient:
 
         @classmethod
         def list(cls):
+            """Returns a list of tools registered with MAO"""
             tools = []
             _tool_names = cls._api_get_tools()
             for tool_name in _tool_names:
@@ -86,7 +88,7 @@ class MaoClient:
 
         @staticmethod
         def _api_get_dataset(name):
-            """Returns detailed configuration of a single MAO tool"""
+            """Returns detailed configuration of a single MAO dataset"""
             try:
                 r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_DATASETS}/{name}")
                 r.raise_for_status()
@@ -97,7 +99,7 @@ class MaoClient:
 
         @staticmethod
         def _api_get_datasets():
-            """Returns a list of datasets registered with MAO"""
+            """Returns a list of datasets registered with MAO from the API"""
             try:
                 r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_DATASETS}")
                 r.raise_for_status()
@@ -111,6 +113,7 @@ class MaoClient:
         
         @classmethod
         def list(cls):
+            """Returns a list of datasets registered with MAO"""
             datasets = []
             _dataset_names = cls._api_get_datasets()
             for dataset_name in _dataset_names:
@@ -126,6 +129,7 @@ class MaoClient:
         cron = fields.Str(load_only=True)
 
         def init(self):
+            """Initialize new pipeline on MAO instance"""
             _pipeline = self.dump()
             try:
                 r = requests.post(f"{MaoClient._URL}/{MaoClient._URL_PIPELINE}/init", json=_pipeline)
@@ -134,6 +138,7 @@ class MaoClient:
                 print(e)
 
         def run(self, cron: str):
+            """Run pipeline with specific cron configuration"""
             _pipeline = self.dump()
             try:
                 r = requests.post(f"{MaoClient._URL}/{MaoClient._URL_PIPELINE}/run", json={
@@ -247,7 +252,6 @@ class Installer:
                 # initialize pipeline
                 _pipeline = MaoClient.Pipeline(tool=selected.name, dataset=_selected_dataset.name)
                 _pipeline.init()
-                #self.mao.init_pipeline(_pipeline)
 
                 # run/schedule pipeline
                 # ask user to enter cron schedule for tool
@@ -257,8 +261,6 @@ class Installer:
                 _cron = Installer._parse_cron(_input)
 
                 _pipeline.run(_cron)
-                #self.mao.run_pipeline(_pipeline)
-
 
         except (TypeError, IndexError, ValueError) as e:
             print(e)
@@ -266,6 +268,8 @@ class Installer:
 
     @staticmethod
     def _merge_tools(base: List[MaoClient.Tool], additional: List[MaoClient.Tool]):
+        """Merges to lists of MAO tools with precedence on base"""
+        
         # https://stackoverflow.com/a/58913412
         # generate base dict from input
         tools = {t.name: t for t in base}
