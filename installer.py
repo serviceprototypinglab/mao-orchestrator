@@ -10,7 +10,7 @@ from apscheduler.triggers.cron import CronTrigger
 from typing import List
 from pathlib import Path
 from shutil import which
-from marshmallow import Schema, fields, post_load
+from marshmallow import fields
 import marshmallow_objects as marshmallow
 from requests.exceptions import HTTPError
 
@@ -160,12 +160,6 @@ class MaoMarketplace:
 
     _URL = ""
 
-    class FederationSchema(Schema):
-        name = fields.Str(required=True)
-        description = fields.Str(required=True)
-        contacts = fields.List(fields.Email(), required=True)
-
-
     class Federation(marshmallow.Model):
         name = fields.Str(required=True)
         description = fields.Str(required=True)
@@ -206,22 +200,42 @@ class Installer:
             print(f"[Error] Missing MAO orchestrator dependency: {_dep_name}")
             exit(1)
 
-        federations = self.market.Federation.list()
-        
-        self.install_dir = input("Enter MAO install directory: ")
-        self.instance_name = input("Enter MAO instance name (must match operator provided name): ")
-        self.instance_ip = input("Enter the public IP of the new MAO instance: ")
-        self.git_email = input("Enter your git config email address (used for MAO commits): ")
-        self.ssh_key_dir = input("Enter directory containing ssh keys (used for git authentication): ")
+        # handle input validation exceptions
+        try:
+            # let user choose if we join an existing federation or install a standalone/new federation
+            _join_federation = Installer._ask_yes_no_question("Do you want to join an existing MAO federation?")
+            if _join_federation:
+                print("") # insert blank line
+                # check if federation operator has already been contacted
+                _options = [
+                    "List available federations from MAO marketplace",  # 0
+                    "Proceed with federation join"                      # 1
+                ]
+                Installer._print_options(_options)
+                _input = input("\nPlease choose an option: ")
+                _selected_option = Installer._parse_numeric_single(_input, _options)
+                
+                if _selected_option == 0:
+                    # list federations from marketplace
+                    self.marketplace_fed_cli()
+                elif _selected_option == 1:
+                    # ask user for etcd details
+                    self.etcd_operator_input = input("\nEnter the operator provided etcd config: ")
+                    self.etcd_cluster_state = "existing"
+            
+            self.install_dir = input("Enter MAO install directory: ")
+            self.instance_name = input("Enter MAO instance name (must match operator provided name): ")
+            self.instance_ip = input("Enter the public IP of the new MAO instance: ")
+            self.git_email = input("Enter your git config email address (used for MAO commits): ")
+            self.ssh_key_dir = input("Enter directory containing ssh keys (used for git authentication): ")
 
-        # let user choose if we join an existing federation or install a standalone/new federation
-        _join_federation = Installer._ask_yes_no_question("Do you want to join an existing MAO federation?")
-        if _join_federation:
-            self.etcd_operator_input = input("Enter the operator provided etcd config: ")
-            self.etcd_cluster_state = "existing"
-        else:
-            self.etcd_operator_input = f"{self.instance_name}=http://{self.instance_ip}:2380"
-            self.etcd_cluster_state = "new"
+            if not _join_federation:
+                self.etcd_operator_input = f"{self.instance_name}=http://{self.instance_ip}:2380"
+                self.etcd_cluster_state = "new"
+
+        except (TypeError, IndexError, ValueError) as e:
+                print(e)
+                exit(1)
 
         # auto generated parameters
         _alphabet = string.ascii_letters + string.digits
@@ -325,6 +339,20 @@ class Installer:
                 result.append(tool)
             return result
 
+    def marketplace_fed_cli(self):
+        federations = self.market.Federation.list()
+        print("") # insert blank line
+        print("Available federations on the MAO marketplace:")
+        Installer._print_federation(federations)
+        _input = input("\nPlease select a federation to join (e.g. 1): ")
+        print("") # insert blank line
+        _selected_fed = Installer._parse_numeric_single(_input, federations)
+        print("Please get in contact with one of the federation operators in order to join:")
+        Installer._print_federation_contacts(federations[_selected_fed])
+
+        print("\nJust launch the installer again after the federation operator provided the necessary information.")
+        exit(0)
+
     @staticmethod
     def _parse_numeric_multi(input, selection_base: list):
         _input = input.split(" ")
@@ -374,6 +402,22 @@ class Installer:
             print(f"[{i}] {dataset.name}, " \
                 f"{dataset.master}, " \
                 f"nodes: {dataset.nodes}")
+
+    @staticmethod
+    def _print_federation(federations: List[MaoMarketplace.Federation]):
+        for i, fed in enumerate(federations):
+            print(f"[{i}] {fed.name} - " \
+                f"{fed.description}")
+
+    @staticmethod
+    def _print_federation_contacts(federation: MaoMarketplace.Federation):
+        for contact in federation.contacts:
+            print(f"- {contact}")
+
+    @staticmethod
+    def _print_options(options: List[str]):
+        for i, option in enumerate(options):
+            print(f"[{i}] {option}")
 
     @staticmethod
     def _print_boolean_symbol(bool: bool):
