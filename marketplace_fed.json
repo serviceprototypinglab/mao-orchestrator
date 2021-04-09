@@ -1,0 +1,18 @@
+[
+    {
+        "name": "DataScience against COVID-19",
+        "contacts": [
+            "operator1@example.com",
+            "operator2@example.com"
+        ],
+        "description": "We use data science to fight against COVID-19."
+    },
+    {
+        "name": "Artifact Observatory",
+        "contacts": [
+            "operator1@example.com",
+            "operator2@example.com"
+        ],
+        "description": "A collection of artifact analysis tools."
+    }
+]

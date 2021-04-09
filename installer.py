@@ -156,6 +156,38 @@ class MaoClient:
         _last_index = len(_result)-1
         return _result[_last_index]
 
+class MaoMarketplace:
+
+    _URL = ""
+
+    class FederationSchema(Schema):
+        name = fields.Str(required=True)
+        description = fields.Str(required=True)
+        contacts = fields.List(fields.Email(), required=True)
+
+
+    class Federation(marshmallow.Model):
+        name = fields.Str(required=True)
+        description = fields.Str(required=True)
+        contacts = fields.List(fields.Email(), required=True)
+
+        @staticmethod
+        def _get_federations():
+            """Retrieves federations from MAO marketplace"""
+            # TODO replace marketplace mock with real marketplace API
+
+            with open('marketplace_fed.json') as marketplace_file:
+                federations = json.load(marketplace_file)
+                return federations
+
+        @classmethod
+        def list(cls):
+            market = cls._get_federations()
+            federations = []
+            for fed in market:
+                federations.append(MaoMarketplace.Federation.load(fed))
+            return federations
+
 class Installer:
 
     # MAO orchestrator dependencies
@@ -163,6 +195,7 @@ class Installer:
 
     def __init__(self):
         self.mao = MaoClient()
+        self.market = MaoMarketplace()
 
     def install(self):
         """Runs the interactive installer CLI"""
@@ -172,6 +205,8 @@ class Installer:
         if _dep_installed == False:
             print(f"[Error] Missing MAO orchestrator dependency: {_dep_name}")
             exit(1)
+
+        federations = self.market.Federation.list()
         
         self.install_dir = input("Enter MAO install directory: ")
         self.instance_name = input("Enter MAO instance name (must match operator provided name): ")

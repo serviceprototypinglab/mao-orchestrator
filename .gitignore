@@ -4,6 +4,7 @@ __pycache__/
 bootstrap.sh
 *.json
 !marketplace.json
+!marketplace_fed.json
 *.csv
 infile/
 .vscode/
