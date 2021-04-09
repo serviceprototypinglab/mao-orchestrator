@@ -350,6 +350,10 @@ class Installer:
         print("Please get in contact with one of the federation operators in order to join:")
         Installer._print_federation_contacts(federations[_selected_fed])
 
+        print("\nPlease provide the operators with the following information:\n" \
+            "- Instance IP-Address\n" \
+            "- Desired instance name")
+
         print("\nJust launch the installer again after the federation operator provided the necessary information.")
         exit(0)
 
