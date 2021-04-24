@@ -46,7 +46,7 @@ def remove_job(id):
 
 ###### New pipeline methods ###################################################
 
-def pipeline_init(tool, dataset, env=None):
+def pipeline_init(tool, dataset, env=None, cmd=None):
     # Clone dataset
     ## Get git link
     dataset_json = get(f"dataset/{dataset}")
@@ -79,7 +79,8 @@ def pipeline_init(tool, dataset, env=None):
         "dataset": dataset,
         "branch": branch_name,
         "local_dir": local_dir,
-        "env": env
+        "env": env,
+        "cmd": cmd
         }
     
     # psql pipeline store
@@ -100,7 +101,8 @@ def pipeline_run(name, cron):
     pipeline = psql_con.execute(_query).fetchone()[0]
     local_dir = pipeline['local_dir']
     host_dir = hostdir+ "/" + name
-    tool_env = pipeline['env']
+    tool_env = pipeline.get('env', None)
+    tool_cmd = pipeline.get('cmd', None)
     # Run the tool + Mount the branch folder
     ## Fetch tool metadata from registry
     tool_json = get(f"tools/{name}")
@@ -110,7 +112,7 @@ def pipeline_run(name, cron):
     tool_image = tool_dict['image']
     ## Use NEW run method from scheduler
     if cron == 'none':
-        output = schedule.pipeline_run(tool_image, local_dir, host_dir, env=tool_env)
+        output = schedule.pipeline_run(tool_image, local_dir, host_dir, env=tool_env, cmd=tool_cmd)
         return {"pipeline": pipeline, "output": output}
     else:
         output = schedule.pipeline_cron(tool_image, local_dir, host_dir, cron)

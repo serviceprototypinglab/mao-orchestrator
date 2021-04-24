@@ -9,13 +9,15 @@ routes = web.RouteTableDef()
 
 docker_client = docker.from_env()
 
-def pipeline_run(image, data_dir, env):
+def pipeline_run(image, data_dir, env, cmd):
     print(f"Running image {image} with dir {data_dir}")
     docker_client.containers.run(image,
                              volumes={data_dir: {'bind': '/usr/src/app/data'}},
                              network='host',
                              environment=env,
-                             auto_remove=True)
+                             command=cmd,
+                             auto_remove=True
+                             )
     print("Done")
     return {"image_used": image, "data_dir": data_dir}
 
@@ -25,7 +27,8 @@ async def init(request):
     image = data['image']
     data_dir = data['data_dir']
     env = data['env']
-    response = pipeline_run(image, data_dir, env)
+    cmd = data['cmd']
+    response = pipeline_run(image, data_dir, env, cmd)
     return web.json_response(response)
 
 app.add_routes(routes)

@@ -50,11 +50,12 @@ def run_container(container, command, env, tool, dataset):
     return "done"
 """
 ##### New pipeline method #####################################################
-def pipeline_run(image, local_dir, host_dir, env=None):
+def pipeline_run(image, local_dir, host_dir, env=None, cmd=None):
     json_out = {
         "image": image,
         "data_dir": host_dir,
-        "env": env
+        "env": env,
+        "cmd": cmd
     }
     r = requests.post('http://0.0.0.0:8081/run', json=json_out)
     print(r.json())

@@ -81,7 +81,8 @@ async def init(request):
     tool = data['tool']
     dataset = data['dataset']
     env = data.get('env', None)
-    response = syncer.pipeline_init(tool, dataset, env=env)
+    cmd = data.get('cmd', None)
+    response = syncer.pipeline_init(tool, dataset, env=env, cmd=cmd)
     return web.json_response(response)
 
 # Run a pipeline (requires ssh configs in docker, WIP)
