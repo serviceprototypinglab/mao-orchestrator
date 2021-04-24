@@ -67,11 +67,17 @@ def pipeline_run(image, local_dir, host_dir, env=None, cmd=None):
     os.chdir(old_wd)
     return r.json()
 
-def pipeline_cron(image, local_dir, host_dir, cron):
-    job = scheduler.add_job(pipeline_run, CronTrigger.from_crontab(cron),
-                            args=[image, local_dir, host_dir], id=image,
-                            replace_existing=True,
-                            misfire_grace_time=64800, coalesce=True)
+def pipeline_cron(image, local_dir, host_dir, cron, options=None):
+    job = scheduler.add_job(
+        pipeline_run,
+        CronTrigger.from_crontab(cron),
+        args=[image, local_dir, host_dir],
+        kwargs=options,
+        id=image,
+        replace_existing=True,
+        misfire_grace_time=64800,
+        coalesce=True
+        )
     return job.id
 
 ###############################################################################

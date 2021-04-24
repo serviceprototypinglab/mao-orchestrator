@@ -115,7 +115,16 @@ def pipeline_run(name, cron):
         output = schedule.pipeline_run(tool_image, local_dir, host_dir, env=tool_env, cmd=tool_cmd)
         return {"pipeline": pipeline, "output": output}
     else:
-        output = schedule.pipeline_cron(tool_image, local_dir, host_dir, cron)
+        output = schedule.pipeline_cron(
+            tool_image,
+            local_dir,
+            host_dir,
+            cron,
+            options={
+                'env': tool_env,
+                'cmd': tool_cmd
+            } 
+            )
         return {"pipeline": pipeline, "job_id": output}
 
 ###### End of new pipeline methods ############################################
