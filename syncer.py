@@ -33,7 +33,7 @@ psql_meta = sqlalchemy.MetaData(bind=psql_con, reflect=True)
 # create (if not exist) pipeline table
 psql_pipeline = Table('pipelines', psql_meta,
     Column('name', String, primary_key=True),
-    Column('content', JSONB),
+    Column('options', JSONB),
     extend_existing=True
 )
 psql_meta.create_all(psql_con)
@@ -84,7 +84,7 @@ def pipeline_init(tool, dataset, env=None, cmd=None):
         }
     
     # psql pipeline store
-    _new_pipeline = psql_pipeline.insert().values(name=tool, content=pipeline)
+    _new_pipeline = psql_pipeline.insert().values(name=tool, options=pipeline)
     psql_con.execute(_new_pipeline)
     
     return pipeline
@@ -93,9 +93,9 @@ def pipeline_init(tool, dataset, env=None, cmd=None):
 def pipeline_run(name, cron):
     # read config from psql pipeline store
     _query = select(
-            [psql_pipeline.c.content]
+            [psql_pipeline.c.options]
         ).where(
-            psql_pipeline.c.content['tool'] == cast(name, JSONB)
+            psql_pipeline.c.options['tool'] == cast(name, JSONB)
         )
     # only fetch one pipeline entry from psql as they have to be unique
     pipeline = psql_con.execute(_query).fetchone()[0]
