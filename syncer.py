@@ -46,7 +46,7 @@ def remove_job(id):
 
 ###### New pipeline methods ###################################################
 
-def pipeline_init(tool, dataset):
+def pipeline_init(tool, dataset, env=None):
     # Clone dataset
     ## Get git link
     dataset_json = get(f"dataset/{dataset}")
@@ -74,11 +74,13 @@ def pipeline_init(tool, dataset):
     dataset_dict['nodes'].append(branch_name)
     write(f"dataset/{dataset}", dataset_dict)
     # Save the association tool + branch on node (including local path)
-    pipeline = {"tool": tool,
-                "dataset": dataset,
-                "branch": branch_name,
-                "local_dir": local_dir
-               }
+    pipeline = {
+        "tool": tool,
+        "dataset": dataset,
+        "branch": branch_name,
+        "local_dir": local_dir,
+        "env": env
+        }
     
     # psql pipeline store
     _new_pipeline = psql_pipeline.insert().values(name=tool, content=pipeline)
@@ -90,11 +92,15 @@ def pipeline_init(tool, dataset):
 def pipeline_run(name, cron):
     # read config from psql pipeline store
     _query = select(
-        [psql_pipeline.c.content]).where(psql_pipeline.c.content['tool'] == cast(name, JSONB)
-    )
+            [psql_pipeline.c.content]
+        ).where(
+            psql_pipeline.c.content['tool'] == cast(name, JSONB)
+        )
+    # only fetch one pipeline entry from psql as they have to be unique
     pipeline = psql_con.execute(_query).fetchone()[0]
     local_dir = pipeline['local_dir']
     host_dir = hostdir+ "/" + name
+    tool_env = pipeline['env']
     # Run the tool + Mount the branch folder
     ## Fetch tool metadata from registry
     tool_json = get(f"tools/{name}")
@@ -104,7 +110,7 @@ def pipeline_run(name, cron):
     tool_image = tool_dict['image']
     ## Use NEW run method from scheduler
     if cron == 'none':
-        output = schedule.pipeline_run(tool_image, local_dir, host_dir)
+        output = schedule.pipeline_run(tool_image, local_dir, host_dir, env=tool_env)
         return {"pipeline": pipeline, "output": output}
     else:
         output = schedule.pipeline_cron(tool_image, local_dir, host_dir, cron)
