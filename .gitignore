@@ -3,8 +3,7 @@ __pycache__/
 *.pyc
 bootstrap.sh
 *.json
-!marketplace.json
-!marketplace_fed.json
+!mocks/*
 *.csv
 infile/
 .vscode/

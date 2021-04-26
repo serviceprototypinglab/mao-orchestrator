@@ -160,6 +160,7 @@ class MaoMarketplace:
 
     _URL = "https://mao-mao-research.github.io/hub/api"
     _URL_TOOLS = "tools.json"
+    _URL_FEDERATIONS = "federations.json"
 
     class MarketplaceNotReachable(Exception):
         pass
@@ -172,11 +173,16 @@ class MaoMarketplace:
         @staticmethod
         def _get_federations():
             """Retrieves federations from MAO marketplace"""
-            # TODO replace marketplace mock with real marketplace API
 
-            with open('marketplace_fed.json') as marketplace_file:
-                federations = json.load(marketplace_file)
-                return federations
+            _response = requests.get(f'{MaoMarketplace._URL}/{MaoMarketplace._URL_FEDERATIONS}')
+            if not _response.ok:
+                raise MaoMarketplace.MarketplaceNotReachable(
+                    ("Fetching tools form marketplace failed, "
+                    f"check if your instance can reach {MaoMarketplace._URL}/{MaoMarketplace._URL_FEDERATIONS}")
+                    )
+
+            _federations = _response.json()
+            return _federations
 
         @classmethod
         def list(cls):
