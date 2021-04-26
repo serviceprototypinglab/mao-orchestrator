@@ -1,18 +1,13 @@
-import git
-import datetime
 import configparser
-import requests
 import json
 import schedule
-import shutil
-import base64
-import glob
 from datetime import datetime
-import logging
 import os
 import subprocess
 from etcd_client import write, get
-#import collect
+import sqlalchemy
+from sqlalchemy import Table, Column, String, select, cast
+from sqlalchemy.dialects.postgresql import JSONB
 
 #logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
@@ -25,17 +20,33 @@ user = config['WORKING_ENVIRONMENT']['USER']
 if importdir.endswith('/'):
     importdir = importdir[:-1]
 
+### PostgreSQL handling for pipeline store
+psql_user = config['POSTGRES']['user']
+psql_password = config['POSTGRES']['password']
+psql_db = config['POSTGRES']['db']
+psql_host = config['POSTGRES']['host']
+psql_port = 5432
+# connect to database
+psql_url = f'postgresql://{psql_user}:{psql_password}@{psql_host}:{psql_port}/{psql_db}'
+psql_con = sqlalchemy.create_engine(psql_url, client_encoding='utf8')
+psql_meta = sqlalchemy.MetaData(bind=psql_con, reflect=True)
+# create (if not exist) pipeline table
+psql_pipeline = Table('pipelines', psql_meta,
+    Column('name', String, primary_key=True),
+    Column('options', JSONB),
+    extend_existing=True
+)
+psql_meta.create_all(psql_con)
 
 def list_jobs():
     return schedule.list_jobs()
-
 
 def remove_job(id):
     return schedule.delete_job(id)
 
 ###### New pipeline methods ###################################################
 
-def pipeline_init(tool, dataset):
+def pipeline_init(tool, dataset, env=None, cmd=None, docker_socket=False):
     # Clone dataset
     ## Get git link
     dataset_json = get(f"dataset/{dataset}")
@@ -63,29 +74,37 @@ def pipeline_init(tool, dataset):
     dataset_dict['nodes'].append(branch_name)
     write(f"dataset/{dataset}", dataset_dict)
     # Save the association tool + branch on node (including local path)
-    pipeline = {"tool": tool,
-                "dataset": dataset,
-                "branch": branch_name,
-                "local_dir": local_dir
-               }
-    try:
-        with open(f"{importdir}/pipelines.json", 'r') as pipeline_file:
-            pipelines = json.load(pipeline_file)
-    except:
-        pipelines = {"pipelines": {}}
-    with open(f"{importdir}/pipelines.json", 'w') as pipeline_file:
-        pipelines['pipelines'][tool] = pipeline
-        json.dump(pipelines, pipeline_file, indent=4)
+    pipeline = {
+        "tool": tool,
+        "dataset": dataset,
+        "branch": branch_name,
+        "local_dir": local_dir,
+        "env": env,
+        "cmd": cmd,
+        "docker_socket": docker_socket
+        }
+    
+    # psql pipeline store
+    _new_pipeline = psql_pipeline.insert().values(name=tool, options=pipeline)
+    psql_con.execute(_new_pipeline)
+    
     return pipeline
 
 ### Scheduling not supported yet
 def pipeline_run(name, cron):
-    # Read config
-    with open(f"{importdir}/pipelines.json", 'r') as pipeline_file:
-        pipelines = json.load(pipeline_file)
-    pipeline = pipelines['pipelines'][name]
+    # read config from psql pipeline store
+    _query = select(
+            [psql_pipeline.c.options]
+        ).where(
+            psql_pipeline.c.options['tool'] == cast(name, JSONB)
+        )
+    # only fetch one pipeline entry from psql as they have to be unique
+    pipeline = psql_con.execute(_query).fetchone()[0]
     local_dir = pipeline['local_dir']
     host_dir = hostdir+ "/" + name
+    tool_env = pipeline.get('env', None)
+    tool_cmd = pipeline.get('cmd', None)
+    tool_docker_socket = pipeline.get('docker_socket', False)
     # Run the tool + Mount the branch folder
     ## Fetch tool metadata from registry
     tool_json = get(f"tools/{name}")
@@ -95,10 +114,27 @@ def pipeline_run(name, cron):
     tool_image = tool_dict['image']
     ## Use NEW run method from scheduler
     if cron == 'none':
-        output = schedule.pipeline_run(tool_image, local_dir, host_dir)
+        output = schedule.pipeline_run(
+            tool_image, 
+            local_dir, 
+            host_dir, 
+            env=tool_env, 
+            cmd=tool_cmd, 
+            docker_socket=tool_docker_socket
+            )
         return {"pipeline": pipeline, "output": output}
     else:
-        output = schedule.pipeline_cron(tool_image, local_dir, host_dir, cron)
+        output = schedule.pipeline_cron(
+            tool_image,
+            local_dir,
+            host_dir,
+            cron,
+            options={
+                'env': tool_env,
+                'cmd': tool_cmd,
+                'docker_socket': tool_docker_socket
+            } 
+            )
         return {"pipeline": pipeline, "job_id": output}
 
 ###### End of new pipeline methods ############################################
