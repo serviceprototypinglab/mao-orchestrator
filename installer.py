@@ -158,7 +158,11 @@ class MaoClient:
 
 class MaoMarketplace:
 
-    _URL = ""
+    _URL = "https://mao-mao-research.github.io/hub/api"
+    _URL_TOOLS = "tools.json"
+
+    class MarketplaceNotReachable(Exception):
+        pass
 
     class Federation(marshmallow.Model):
         name = fields.Str(required=True)
@@ -181,6 +185,39 @@ class MaoMarketplace:
             for fed in market:
                 federations.append(MaoMarketplace.Federation.load(fed))
             return federations
+
+    class Tool(MaoClient.Tool):
+
+        @staticmethod
+        def _api_get_tool(name: str):
+            raise NotImplementedError
+
+        @staticmethod
+        def _api_get_tools():
+            """Retrieves federations from MAO marketplace"""
+
+            _response = requests.get(f'{MaoMarketplace._URL}/{MaoMarketplace._URL_TOOLS}')
+            if not _response.ok:
+                raise MaoMarketplace.MarketplaceNotReachable(
+                    ("Fetching tools form marketplace failed, "
+                    f"check if your instance can reach {MaoMarketplace._URL}/{MaoMarketplace._URL_TOOLS}")
+                    )
+
+            _tools = _response.json()
+            return _tools
+
+        @classmethod
+        def list(cls):
+            """Returns a list of tools available in the MAO marketplace"""
+            tools = []
+            _tools_json = cls._api_get_tools()
+            for tool in _tools_json:
+                tool = cls.load(tool)
+                tools.append(tool)
+            return tools
+
+        def add(self):
+            raise NotImplementedError
 
 class Installer:
 
@@ -268,7 +305,7 @@ class Installer:
         for tool in _tools_fed:
             tool.federation_registered = True
         # get tools from marketplace
-        _tools_market = self._get_marketplace()
+        _tools_market = self.market.Tool.list()
         _tools = np.array(Installer._merge_tools(_tools_fed, _tools_market))
 
         # display tool selection on CLI
@@ -326,18 +363,6 @@ class Installer:
             if tool.name not in tools:
                 tools[tool.name] = tool
         return list(tools.values())
-
-    def _get_marketplace(self):
-        """Read current selection of tools from MAO marketplace"""
-        # TODO replace if query of actual marketplace, currently mocked via JSON file
-
-        with open('marketplace.json') as marketplace_file:
-            tools = json.load(marketplace_file)
-            result = []
-            for tool in tools:
-                tool = MaoClient.Tool.load(tool)
-                result.append(tool)
-            return result
 
     def marketplace_fed_cli(self):
         federations = self.market.Federation.list()
