@@ -15,14 +15,39 @@ If a user wants to join an existing MAO federation it is necessary to approach t
 
 ### Prerequisites
 
-The MAO orchestrator has requirements that need to be present on the host system before the installation of a new instance:
-- Python 3
+The MAO orchestrator has requirements that need to be present on the host system before the installation of a new instance. The following section list these requirements and tries to describe how to get them for your specific setup.
+
+- Python 3.6+ (including`pip`)
+  - the hosting system needs a fairly recent version of Python in order to run the installer and initialization scripts that ease the setup process
+  - the actual MAO orchestrator Python version and dependencies are handled via within the MAO Docker containers that are maintained by the MAO team without any additional user interaction required
+  - if your distribution provides a recent version of Python please refer to your distributions documentation and use the package manager to install it, e.g. for Ubuntu - otherwise you can find the most recent Python version [here](https://www.python.org/downloads/):
+```
+sudo apt-get install python3 python3-pip
+```
 - Docker
+  - all MAO tools and the orchestrator together with its dependencies are shipped as Docker containers, therefore the host system needs to have the Docker engine installed in order to be able to execute those
+  - if your distribution provides a recent version of the Docker Engine please refer to your distributions documentation and use the package manager to install it - otherwise you can find more information on how to install Docker [here](https://docs.docker.com/engine/install/)
 - Docker-Compose
+  - the MAO orchestrator consists of several components (orchestrator itself, PostgreSQL database, tool executor, etcd instance etc.) that need some plumping in order to work together correctly. To ease the management of this multi-component setup MAO organizes the different components along with the necessary plumbing using Docker-Compose.
+  - if your distribution provides a recent version of Docker-Compose please refer to your distributions documentation and use the package manager to install it - otherwise you can find more information on how to install Docker-Compose [here](https://docs.docker.com/compose/install/)
+- Git
+  - if you want to git to download the MAO orchestrator to your system please refer to your distributions documentation and use the package manager to install it
+  - otherwise you can use the GitHub project download feature to generate an archive that you can download on your host system
 
 ### Installation
 
-To run the installer use the following command:
+Download or clone this git repository to your hosting system via:
+```
+git clone https://github.com/serviceprototypinglab/mao-orchestrator
+```
+
+In order to run the installer some Python dependencies have to be installed in order for the installer to run correctly:
+- the installer is shipped with a separate pip requirements file called `requirements_installer.txt`. You can use the following command with `pip` or `pip3` (depending on your system) to install the necessary requirements:
+```
+pip install -r requirements_installer.txt
+```
+
+To run the actual installer use the following command:
 
 ```
 python3 maoctl.py instance install
@@ -43,6 +68,31 @@ Installation parameters prompted by the installer:
 - ***SSH key directory***: path to the directory on the host that holds the SSH key pair used for git data-repository authentication
 
 After this setup procedure the newly installed instance can be started via the commands provided by the installer.
+
+### Initialization
+
+The MAO installer provides an initialization sub-command that eases the setup of a newly installed instance. The `instance init` command queries the (if existing) federation and the MAO marketplace for tools that a user might want to schedule on the new instance in order to participate actively in the federation.
+
+Use the following command (as often as you want) to initialize or alter an instance and the tools that are scheduled on it:
+```
+python3 maoctl.py instance init
+```
+
+The `init` sub-command will list all tools available via the federation or the MAO marketplace and lets the user connect the tool execution to a specific dataset, that is already registered within the federation. The initial list will provided an overview of the tools, show if they are registered within the federation and show if they are already scheduled on the current instance (only possible on a subsequent execution of the `init` command).
+
+```
+Available MAO Tools:
+[0] Dockerhub-Collector, federation ✓, instance ✗     # already registered within the federation
+[1] Artifacthub-Collector, federation ✗, instance ✗   # not yet registered, fetched from marketplace
+```
+
+After the tool selection the user can connect each tool with an existing dataset in the federation. This connection is used to store the results of subsequent tool executions in the correct git based data-repository.
+
+As a last step the user can enter a time rule to control the scheduled execution of each tool. This rule should be supplied in cron syntax (more information can be found e.g. [here](https://crontab.guru/)).
+
+These last two steps are done for each of the previously selected tools.
+
+After the `init` command is finished your newly installed MAO instances is up and running with the selected tools scheduled for regular execution.
 
 # MAOCTL
 
