@@ -11,7 +11,7 @@ The setup process of a new MAO instance is composed of two steps:
 - (optional, only necessary if new instance should join exiting federation) federation selection and making contact with operators for joining
 - actual instance installation and federation join
 
-If a user wants to join an existing MAO federation it is necessary to approach the federation operator before the installation of the new instance in order to negotiate certain parameters which are used by the installer to join the newly installed orchestrator with the existing federation. The selection of a desired federation to join is supported by the MAO installer which queries and presents existing federations based on the public MAO marketplace.
+If a user wants to join an existing MAO federation it is necessary to approach the federation operator before the installation of the new instance in order to negotiate certain parameters which are used by the installer to join the newly installed orchestrator with the existing federation. The selection of a desired federation to join is supported by the MAO installer which queries and presents existing federations based on the public MAO marketplace. Details can be found below in the `Installation` section.
 
 ### Prerequisites
 
@@ -19,8 +19,8 @@ The MAO orchestrator has requirements that need to be present on the host system
 
 - Python 3.6+ (including`pip`)
   - the hosting system needs a fairly recent version of Python in order to run the installer and initialization scripts that ease the setup process
-  - the actual MAO orchestrator Python version and dependencies are handled via within the MAO Docker containers that are maintained by the MAO team without any additional user interaction required
-  - if your distribution provides a recent version of Python please refer to your distributions documentation and use the package manager to install it, e.g. for Ubuntu - otherwise you can find the most recent Python version [here](https://www.python.org/downloads/):
+  - the actual MAO orchestrator Python version and dependencies are handled within the MAO Docker containers that are maintained by the MAO team without any additional user interaction required
+  - if your distribution provides a recent version of Python please refer to your distributions documentation and use the package manager to install it, e.g. see command below for Ubuntu - otherwise you can find the most recent Python version [here](https://www.python.org/downloads/):
 ```
 sudo apt-get install python3 python3-pip
 ```
@@ -31,7 +31,7 @@ sudo apt-get install python3 python3-pip
   - the MAO orchestrator consists of several components (orchestrator itself, PostgreSQL database, tool executor, etcd instance etc.) that need some plumping in order to work together correctly. To ease the management of this multi-component setup MAO organizes the different components along with the necessary plumbing using Docker-Compose.
   - if your distribution provides a recent version of Docker-Compose please refer to your distributions documentation and use the package manager to install it - otherwise you can find more information on how to install Docker-Compose [here](https://docs.docker.com/compose/install/)
 - Git
-  - if you want to git to download the MAO orchestrator to your system please refer to your distributions documentation and use the package manager to install it
+  - if you want to use git to download the MAO orchestrator to your system please refer to your distributions documentation and use the package manager to install it
   - otherwise you can use the GitHub project download feature to generate an archive that you can download on your host system
 
 ### Installation
@@ -65,7 +65,7 @@ Installation parameters prompted by the installer:
 - **MAO instance name**: can be freely chosen in case of new federation or standalone instance, if you like to join an existing one this has to be negotiated with the federation operator
 - **Public IP**: IP address from which other systems can reach the new MAO instance
 - **Git e-mail address**: used for the data-repository commits executed by the orchestrator
-- ***SSH key directory***: path to the directory on the host that holds the SSH key pair used for git data-repository authentication
+- **SSH key directory**: path to the directory on the host that holds the SSH key pair used for git data-repository authentication
 
 After this setup procedure the newly installed instance can be started via the commands provided by the installer.
 
