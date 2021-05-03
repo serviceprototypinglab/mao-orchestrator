@@ -10,7 +10,7 @@ from apscheduler.triggers.cron import CronTrigger
 from typing import List
 from pathlib import Path
 from shutil import which
-from marshmallow import fields
+from marshmallow import fields, EXCLUDE
 import marshmallow_objects as marshmallow
 from requests.exceptions import HTTPError
 
@@ -126,7 +126,21 @@ class MaoClient:
     class Pipeline(marshmallow.Model):
         tool = fields.Str(required=True)
         dataset = fields.Str(required=True)
+        cmd = fields.Str(default=None, allow_none=True)
+        env = fields.Dict(default=None, allow_none=True)
+        docker_socket = fields.Bool(default=False)
         cron = fields.Str(load_only=True)
+
+        @staticmethod
+        def _api_get_pipelines():
+            """Returns a list of pipelines registered with MAO from the API"""
+            try:
+                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_PIPELINE}")
+                r.raise_for_status()
+                _tools = r.json()
+                return(_tools)
+            except HTTPError as e:
+                print(e)
 
         def init(self):
             """Initialize new pipeline on MAO instance"""
@@ -148,6 +162,16 @@ class MaoClient:
                 r.raise_for_status()
             except HTTPError as e:
                 print(e)
+
+        @classmethod
+        def list(cls):
+            """Returns a list of pipelines registered with instance"""
+            pipelines = []
+            _pipeline_data = cls._api_get_pipelines()
+            for pipeline in _pipeline_data:
+                _tmp_pipe = cls.load(pipeline, unknown=EXCLUDE)
+                pipelines.append(_tmp_pipe)
+            return pipelines
 
     @staticmethod
     def _remove_prefix(path):
@@ -316,6 +340,12 @@ class Installer:
         # get tools from marketplace
         _tools_market = self.market.Tool.list()
         _tools = np.array(Installer._merge_tools(_tools_fed, _tools_market))
+        # get pipelines from instance
+        _pipelines = self.mao.Pipeline.list()
+        for pipeline in _pipelines:
+            for tool in _tools:
+                if pipeline.tool == tool.name:
+                    tool.instance_scheduled = True
 
         # display tool selection on CLI
         print("Initialize instance...")
