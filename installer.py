@@ -332,20 +332,26 @@ class Installer:
         print("\t$ docker-compose up")
 
     def initialize(self):
-        # get MAO tools from different sources
-        # get tools from current federation
-        _tools_fed = self.mao.Tool.list()
-        for tool in _tools_fed:
-            tool.federation_registered = True
-        # get tools from marketplace
-        _tools_market = self.market.Tool.list()
-        _tools = np.array(Installer._merge_tools(_tools_fed, _tools_market))
-        # get pipelines from instance
-        _pipelines = self.mao.Pipeline.list()
-        for pipeline in _pipelines:
-            for tool in _tools:
-                if pipeline.tool == tool.name:
-                    tool.instance_scheduled = True
+
+        try:
+            # get MAO tools from different sources
+            # get tools from current federation
+            _tools_fed = self.mao.Tool.list()
+            for tool in _tools_fed:
+                tool.federation_registered = True
+            # get tools from marketplace
+            _tools_market = self.market.Tool.list()
+            _tools = np.array(Installer._merge_tools(_tools_fed, _tools_market))
+            # get pipelines from instance
+            _pipelines = self.mao.Pipeline.list()
+            for pipeline in _pipelines:
+                for tool in _tools:
+                    if pipeline.tool == tool.name:
+                        tool.instance_scheduled = True
+        except requests.exceptions.RequestException as e:
+            print(f"\n [Error] The following error occurred while trying to reach the orchestrator: \n {e}")
+            print("\n Are you sure the MAO orchestrator is up and running?")
+            exit(1)
 
         # display tool selection on CLI
         print("Initialize instance...")
