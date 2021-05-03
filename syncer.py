@@ -46,6 +46,19 @@ def remove_job(id):
 
 ###### New pipeline methods ###################################################
 
+def pipeline_list():
+    # read from psql pipeline store
+    _query = select(
+            [psql_pipeline.c.options]
+        )
+    # only fetch one pipeline entry from psql as they have to be unique
+    _pipelines = []
+    _result = psql_con.execute(_query).fetchall()
+    for pipeline in _result:
+        print(pipeline)
+        _pipelines.extend(pipeline)
+    return _pipelines
+
 def pipeline_init(tool, dataset, env=None, cmd=None, docker_socket=False):
     # Clone dataset
     ## Get git link

@@ -76,6 +76,12 @@ async def register(request):
     etcd_client.write("dataset/{}".format(data['name']), body)
     return web.json_response(etcd_client.get("dataset/{}".format(data['name'])))
 
+# Get list of currently registered pipelines
+@routes.get('/pipeline')
+async def init(request):
+    _pipelines = syncer.pipeline_list()
+    return web.json_response(_pipelines)
+
 # Create the node branch, register and create pipeline config
 @routes.post('/pipeline/init')
 async def init(request):
