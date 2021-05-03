@@ -3,13 +3,15 @@
 Distributed orchestrator for the [MAO-MAO collaborative research](https://mao-mao-research.github.io/) framework. Allows scheduled execution of containerized artefacts and semi-automatic data management workflows.
 This implementation makes use of an etcd cluster for member discovery and metadata sharing and a simple git interface for managing data sets.
 
-# Install instructions
+## Installation instructions
 
 The orchestrator setup is controlled and build via docker-compose. However the user is provided with an interactive installer that asks for the necessary parameters to allow a quick and easy installation of a new MAO instance.
 
-If a user wants to join an existing MAO federation it is necessary to approach the federation operator before the installation of the new instance in order to negotiate certain parameters which are used by the installer to join the newly installed orchestrator with the existing federation:
-- MAO instance name
-- etcd configuration token
+The setup process of a new MAO instance is composed of two steps:
+- (optional, only necessary if new instance should join exiting federation) federation selection and making contact with operators for joining
+- actual instance installation and federation join
+
+If a user wants to join an existing MAO federation it is necessary to approach the federation operator before the installation of the new instance in order to negotiate certain parameters which are used by the installer to join the newly installed orchestrator with the existing federation. The selection of a desired federation to join is supported by the MAO installer which queries and presents existing federations based on the public MAO marketplace.
 
 ### Prerequisites
 
@@ -23,16 +25,22 @@ The MAO orchestrator has requirements that need to be present on the host system
 To run the installer use the following command:
 
 ```
-python3 maoctl.py install
+python3 maoctl.py instance install
 ```
 
-The installer will check the existence of the necessary dependencies and prompt the user for the installation parameters which are listed below for reference:
+The installer will check the existence of the necessary dependencies and prompt the user for the installation parameters which are listed below for reference.
+
+- **Selection - federate or standalone**: with this selection the user can choose either to install a standalone instance (e.g. to build up a new federation) or to join an existing MAO federation
+
+Before the actual installation starts the installers will ask if the new instance is supposed to join an existing federation. If this is not the case you can skip this first step and the installation immediately starts. In case of a join request the installer will present a list of existing federations based on the MAO marketplace. After the selection of the desired federation to join it will present the necessary contact information that can be used in order to reach out to the federation operator that needs to prepare the join of a new instance. The installation process is suspended after this step and can be resumed after the necessary information is exchanged with the federation operator.
+
+Installation parameters prompted by the installer:
+
 - **MAO install directory**: directory on the host system to install the MAO instance to
 - **MAO instance name**: can be freely chosen in case of new federation or standalone instance, if you like to join an existing one this has to be negotiated with the federation operator
 - **Public IP**: IP address from which other systems can reach the new MAO instance
 - **Git e-mail address**: used for the data-repository commits executed by the orchestrator
 - ***SSH key directory***: path to the directory on the host that holds the SSH key pair used for git data-repository authentication
-- **Selection - federate or standalone**: with this selection the user can choose either to install a standalone instance (e.g. to build up a new federation) or to join an existing MAO federation
 
 After this setup procedure the newly installed instance can be started via the commands provided by the installer.
 
