@@ -9,5 +9,3 @@ psycopg2-binary
 pandas
 numpy
 pyyaml
-marshmallow==3.11.1
-marshmallow-objects==2.3.0

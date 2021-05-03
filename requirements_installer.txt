@@ -1,0 +1,6 @@
+APScheduler==3.6.1
+numpy==1.20.2
+PyYAML==5.4.1
+requests==2.25.1
+marshmallow==3.11.1
+marshmallow-objects==2.3.0
