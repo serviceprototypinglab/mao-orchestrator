@@ -33,7 +33,7 @@ psql_meta = sqlalchemy.MetaData(bind=psql_con, reflect=True)
 # create (if not exist) pipeline table
 psql_pipeline = Table('pipelines', psql_meta,
     Column('name', String, primary_key=True),
-    Column('options', JSONB),
+    Column('steps', JSONB),
     extend_existing=True
 )
 psql_meta.create_all(psql_con)
@@ -59,22 +59,27 @@ def pipeline_list():
         _pipelines.extend(pipeline)
     return _pipelines
 
-def pipeline_init(tool, dataset, env=None, cmd=None, docker_socket=False):
-    # Clone dataset
-    ## Get git link
-    dataset_json = get(f"dataset/{dataset}")
-    ## etcd does not like double quotes but json needs them
+def get_dataset(name):
+    '''Returns dataset dict definition from federation etcd'''
+    # get dataset from etcd
+    dataset_json = get(f"dataset/{name}")
     dataset_json = dataset_json.replace("'", '"')
-    dataset_dict = json.loads(dataset_json)
-    dataset_git = dataset_dict['master']
-    local_dir = importdir + "/" + tool
+    dataset = json.loads(dataset_json)
+    return dataset
+
+def clone_git_repo(url, local_dir):
     try:
-        subprocess.run(f"git clone {dataset_git} {local_dir}", shell=True)
+        subprocess.run(f"git clone {url} {local_dir}", shell=True)
     except:
         return f"Could not clone, check if {local_dir} exists and is not empty"
-    # Create new branch (use node name from config)
-    branch_name = user
-    ## Get into the git dir
+
+def init_dataset_repo(dataset_name, local_dir):
+    # get input dataset from etcd
+    input_dataset = get_dataset(dataset_name)
+    # clone git repo
+    clone_git_repo(input_dataset['master'], local_dir)
+
+def create_step_branch(branch_name, local_dir):
     old_wd = os.getcwd()
     os.chdir(local_dir)
     try:
@@ -83,26 +88,64 @@ def pipeline_init(tool, dataset, env=None, cmd=None, docker_socket=False):
     except:
         return f"Could not create branch, check if {branch_name} already exists"
     os.chdir(old_wd)
-    # Register the branch
-    dataset_dict['nodes'].append(branch_name)
-    # TODO check with Panos: quotes handling inside etcd
-    write(f"dataset/{dataset}", json.dumps(dataset_dict))
-    # Save the association tool + branch on node (including local path)
-    pipeline = {
-        "tool": tool,
-        "dataset": dataset,
-        "branch": branch_name,
-        "local_dir": local_dir,
-        "env": env,
-        "cmd": cmd,
-        "docker_socket": docker_socket
-        }
+
+def dataset_register_branch(dataset_name, branch):
+    dataset = get_dataset(dataset_name)
+    nodes = dataset['nodes']
+    # only add branch if not already existing
+    if branch not in nodes:
+        nodes.append(branch)
+        dataset['nodes'] = nodes
+        write(f"dataset/{dataset_name}", dataset)
+
+###### New pipeline methods ###################################################
+
+def pipeline_init(name, steps):
+    '''Initializes new MAO pipeline'''
     
+    for step in steps:
+        pipeline_step_init(step)
+
     # psql pipeline store
-    _new_pipeline = psql_pipeline.insert().values(name=tool, options=pipeline)
+    _new_pipeline = psql_pipeline.insert().values(name=name, steps=steps)
     psql_con.execute(_new_pipeline)
-    
-    return pipeline
+
+    return {'name': name, 'steps': steps}
+
+def pipeline_step_init(step):
+    '''Initializes a single MAO pipeline step'''
+
+    # prepare input dataset, if defined
+    if step['input_dataset'] != None:
+        input_dataset_name = step['input_dataset']
+        input_dataset_path = f'{importdir}/{input_dataset_name}'
+        input_dataset_branch = f"{step['name']}-{user}"
+        init_dataset_repo(input_dataset_name, input_dataset_path)
+        create_step_branch(input_dataset_branch, input_dataset_path)
+        dataset_register_branch(input_dataset_name, input_dataset_branch)
+
+        # update step dict
+        step['input_dataset'] = {}
+        step['input_dataset']['name'] = input_dataset_name
+        step['input_dataset']['local_dir'] = input_dataset_path
+        step['input_dataset']['branch'] = input_dataset_branch
+
+
+    # prepare output dataset
+    output_dataset_name = step['output_dataset']
+    output_dataset_path = f'{importdir}/{output_dataset_name}'
+    output_dataset_branch = f"{step['name']}-{user}"
+    init_dataset_repo(output_dataset_name, output_dataset_path)
+    create_step_branch(output_dataset_branch, output_dataset_path)
+    dataset_register_branch(output_dataset_name, output_dataset_branch)
+
+    # update step dict
+    step['output_dataset'] = {}
+    step['output_dataset']['name'] = output_dataset_name
+    step['output_dataset']['local_dir'] = output_dataset_path
+    step['output_dataset']['branch'] = output_dataset_branch
+
+    return step
 
 ### Scheduling not supported yet
 def pipeline_run(name, cron):

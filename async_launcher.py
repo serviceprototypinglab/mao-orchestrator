@@ -83,15 +83,11 @@ async def init(request):
     return web.json_response(_pipelines)
 
 # Create the node branch, register and create pipeline config
+# TODO: [Pipeline] maybe switch to /pipeline?
 @routes.post('/pipeline/init')
 async def init(request):
     data = await request.json()
-    tool = data['tool']
-    dataset = data['dataset']
-    env = data.get('env', None)
-    cmd = data.get('cmd', None)
-    docker_socket = data.get('docker_socket', False)
-    response = syncer.pipeline_init(tool, dataset, env=env, cmd=cmd, docker_socket=docker_socket)
+    response = syncer.pipeline_init(data['name'], data['steps'])
     return web.json_response(response)
 
 # Run a pipeline (requires ssh configs in docker, WIP)
