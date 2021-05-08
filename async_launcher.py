@@ -95,7 +95,7 @@ async def init(request):
 async def init(request):
     data = await request.json()
     name = data['name']
-    cron = 'none'
+    cron = None
     if 'cron' in data:
         cron = data['cron']
     response = syncer.pipeline_run(name, cron)

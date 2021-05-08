@@ -151,47 +151,40 @@ def pipeline_step_init(step):
 def pipeline_run(name, cron):
     # read config from psql pipeline store
     _query = select(
-            [psql_pipeline.c.options]
+            [psql_pipeline.c.steps]
         ).where(
-            psql_pipeline.c.options['tool'] == cast(name, JSONB)
+            psql_pipeline.c.name == name
         )
     # only fetch one pipeline entry from psql as they have to be unique
-    pipeline = psql_con.execute(_query).fetchone()[0]
-    local_dir = pipeline['local_dir']
-    host_dir = hostdir+ "/" + name
-    tool_env = pipeline.get('env', None)
-    tool_cmd = pipeline.get('cmd', None)
-    tool_docker_socket = pipeline.get('docker_socket', False)
-    # Run the tool + Mount the branch folder
-    ## Fetch tool metadata from registry
-    tool_json = get(f"tools/{name}")
-    ## etcd does not like double quotes but json needs them
-    tool_json = tool_json.replace("'", '"')
-    tool_dict = json.loads(tool_json)
-    tool_image = tool_dict['image']
+    steps = psql_con.execute(_query).fetchone()[0]
+    # local_dir = pipeline['local_dir']
+    # host_dir = hostdir+ "/" + name
+    # tool_env = pipeline.get('env', None)
+    # tool_cmd = pipeline.get('cmd', None)
+    # tool_docker_socket = pipeline.get('docker_socket', False)
+    # # Run the tool + Mount the branch folder
+    # ## Fetch tool metadata from registry
+    # tool_json = get(f"tools/{name}")
+    # ## etcd does not like double quotes but json needs them
+    # tool_json = tool_json.replace("'", '"')
+    # tool_dict = json.loads(tool_json)
+    # tool_image = tool_dict['image']
     ## Use NEW run method from scheduler
-    if cron == 'none':
-        output = schedule.pipeline_run(
-            tool_image, 
-            local_dir, 
-            host_dir, 
-            env=tool_env, 
-            cmd=tool_cmd, 
-            docker_socket=tool_docker_socket
-            )
-        return {"pipeline": pipeline, "output": output}
+    if cron is None:
+        output = schedule.pipeline_run(steps)
+        return {"pipeline": name, "output": output}
     else:
-        output = schedule.pipeline_cron(
-            tool_image,
-            local_dir,
-            host_dir,
-            cron,
-            options={
-                'env': tool_env,
-                'cmd': tool_cmd,
-                'docker_socket': tool_docker_socket
-            } 
-            )
+        # output = schedule.pipeline_cron(
+        #     tool_image,
+        #     local_dir,
+        #     host_dir,
+        #     cron,
+        #     options={
+        #         'env': tool_env,
+        #         'cmd': tool_cmd,
+        #         'docker_socket': tool_docker_socket
+        #     } 
+        #     )
         return {"pipeline": pipeline, "job_id": output}
 
 ###### End of new pipeline methods ############################################
