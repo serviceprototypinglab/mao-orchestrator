@@ -2,7 +2,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 #import docker
 import configparser
-import etcd_client
 import json
 import base64
 import glob
@@ -15,6 +14,7 @@ from datetime import datetime
 import yaml
 from pathlib import Path
 import tempfile
+from etcd_client import get
 
 
 EXECUTOR_URL = "http://0.0.0.0:8081/run"
@@ -93,12 +93,12 @@ def git_commit_push_branch(repo_path):
         return f"Could not commit + push, check status of git repo at {repo_path}"
     os.chdir(old_wd)
 
-def voting_mock(dataset):
+def voting_mock(repo_path, dataset):
     '''This is a voting mock that copies node branch to ground-truth'''
     old_wd = os.getcwd()
-    os.chdir(dataset['local_dir'])
+    os.chdir(repo_path)
     try:
-        git_checkout_branch(dataset['local_dir'], 'ground-truth')
+        git_checkout_branch(repo_path, 'ground-truth')
         subprocess.run(f"git push --set-upstream origin ground-truth", shell=True)
         subprocess.run(f"git merge {dataset['branch']}", shell=True)
         subprocess.run(f'git commit -m "voting"', shell=True)
@@ -107,29 +107,46 @@ def voting_mock(dataset):
         return f"Could not commit + push, check status of git repo at {repo_path}"
     os.chdir(old_wd)
 
+def get_tool_image(tool_name):
+    '''Retrieves tool image from federation'''
+    tool_json = get(f"tools/{tool_name}")
+    ## etcd does not like double quotes but json needs them
+    tool_json = tool_json.replace("'", '"')
+    tool_dict = json.loads(tool_json)
+    return tool_dict['image']
 
-def pipeline_run(steps):
+
+def pipeline_run(importdir, hostdir, steps):
     '''Runs pipeline steps using remote executor'''
     
     for step in steps:
         # prepare datasets
         input_dataset = step['input_dataset']
         input_copy = None
+        input_copy_path = None
         if input_dataset is not None:
-            input_copy = create_tmp_from_branch(input_dataset['local_dir'], 'ground-truth')
-        
-        git_checkout_branch(step['output_dataset']['local_dir'], step['output_dataset']['branch'])
+            input_copy = create_tmp_from_branch(f"{importdir}/{input_dataset['name']}", 'ground-truth')
+            input_copy_path = input_copy.name.replace(importdir, hostdir)
+        git_checkout_branch(f"{importdir}/{step['output_dataset']['name']}", step['output_dataset']['branch'])
+
+        exec_json = {
+            "image": get_tool_image(step['tool']),
+            "input_dir": input_copy_path,
+            "output_dir": f"{hostdir}/{step['output_dataset']['name']}",
+            "env": step['env'],
+            "cmd": step['cmd'],
+            "docker_socket": step['docker_socket']
+        }
 
         # execute step via remote executor
-        pass
-        # r = requests.post(EXECUTOR_URL, json=step)
+        r = requests.post(EXECUTOR_URL, json=exec_json)
 
         # push output result + cleanup
-        git_commit_push_branch(step['output_dataset']['local_dir'])
+        git_commit_push_branch(f"{importdir}/{step['output_dataset']['name']}")
         if input_copy is not None:
             input_copy.cleanup()
 
-        voting_mock(step['output_dataset'])
+        voting_mock(f"{importdir}/{step['output_dataset']['name']}", step['output_dataset'])
 
 # def pipeline_run(image, local_dir, host_dir, env=None, cmd=None, docker_socket=False):
 #     json_out = {

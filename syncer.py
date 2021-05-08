@@ -127,7 +127,6 @@ def pipeline_step_init(step):
         # update step dict
         step['input_dataset'] = {}
         step['input_dataset']['name'] = input_dataset_name
-        step['input_dataset']['local_dir'] = input_dataset_path
         step['input_dataset']['branch'] = input_dataset_branch
 
 
@@ -142,7 +141,6 @@ def pipeline_step_init(step):
     # update step dict
     step['output_dataset'] = {}
     step['output_dataset']['name'] = output_dataset_name
-    step['output_dataset']['local_dir'] = output_dataset_path
     step['output_dataset']['branch'] = output_dataset_branch
 
     return step
@@ -171,7 +169,7 @@ def pipeline_run(name, cron):
     # tool_image = tool_dict['image']
     ## Use NEW run method from scheduler
     if cron is None:
-        output = schedule.pipeline_run(steps)
+        output = schedule.pipeline_run(importdir, hostdir, steps)
         return {"pipeline": name, "output": output}
     else:
         # output = schedule.pipeline_cron(
