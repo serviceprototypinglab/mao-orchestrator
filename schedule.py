@@ -148,31 +148,12 @@ def pipeline_run(importdir, hostdir, steps):
 
         voting_mock(f"{importdir}/{step['output_dataset']['name']}", step['output_dataset'])
 
-# def pipeline_run(image, local_dir, host_dir, env=None, cmd=None, docker_socket=False):
-#     json_out = {
-#         "image": image,
-#         "data_dir": host_dir,
-#         "env": env,
-#         "cmd": cmd,
-#         "docker_socket": docker_socket
-#     }
-#     r = requests.post('http://0.0.0.0:8081/run', json=json_out)
-#     print(r.json())
-#     old_wd = os.getcwd()
-#     os.chdir(local_dir)
-#     subprocess.run(f"git add .", shell=True)
-#     subprocess.run(f'git commit -m "auto-exec"', shell=True)
-#     subprocess.run(f"git push", shell=True)
-#     os.chdir(old_wd)
-#     return r.json()
-
-def pipeline_cron(image, local_dir, host_dir, cron, options=None):
+def pipeline_cron(name, importdir, hostdir, steps, cron):
     job = scheduler.add_job(
         pipeline_run,
         CronTrigger.from_crontab(cron),
-        args=[image, local_dir, host_dir],
-        kwargs=options,
-        id=image,
+        args=[importdir, hostdir, steps],
+        id=name,
         replace_existing=True,
         misfire_grace_time=64800,
         coalesce=True

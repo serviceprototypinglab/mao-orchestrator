@@ -145,7 +145,6 @@ def pipeline_step_init(step):
 
     return step
 
-### Scheduling not supported yet
 def pipeline_run(name, cron):
     # read config from psql pipeline store
     _query = select(
@@ -155,34 +154,19 @@ def pipeline_run(name, cron):
         )
     # only fetch one pipeline entry from psql as they have to be unique
     steps = psql_con.execute(_query).fetchone()[0]
-    # local_dir = pipeline['local_dir']
-    # host_dir = hostdir+ "/" + name
-    # tool_env = pipeline.get('env', None)
-    # tool_cmd = pipeline.get('cmd', None)
-    # tool_docker_socket = pipeline.get('docker_socket', False)
-    # # Run the tool + Mount the branch folder
-    # ## Fetch tool metadata from registry
-    # tool_json = get(f"tools/{name}")
-    # ## etcd does not like double quotes but json needs them
-    # tool_json = tool_json.replace("'", '"')
-    # tool_dict = json.loads(tool_json)
-    # tool_image = tool_dict['image']
-    ## Use NEW run method from scheduler
+
+    # check if we execute right away or schedule
     if cron is None:
         output = schedule.pipeline_run(importdir, hostdir, steps)
         return {"pipeline": name, "output": output}
     else:
-        # output = schedule.pipeline_cron(
-        #     tool_image,
-        #     local_dir,
-        #     host_dir,
-        #     cron,
-        #     options={
-        #         'env': tool_env,
-        #         'cmd': tool_cmd,
-        #         'docker_socket': tool_docker_socket
-        #     } 
-        #     )
-        return {"pipeline": pipeline, "job_id": output}
+        output = schedule.pipeline_cron(
+            name,
+            importdir,
+            hostdir,
+            steps,
+            cron
+            )
+        return {"pipeline": name, "job_id": output}
 
 ###### End of new pipeline methods ############################################
