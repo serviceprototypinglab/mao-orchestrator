@@ -3,15 +3,10 @@ from apscheduler.triggers.cron import CronTrigger
 #import docker
 import configparser
 import json
-import base64
-import glob
 import os
 import logging
-import git
 import subprocess
 import requests
-from datetime import datetime
-import yaml
 from pathlib import Path
 import tempfile
 from etcd_client import get
