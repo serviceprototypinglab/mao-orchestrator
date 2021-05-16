@@ -61,8 +61,9 @@ def create_tmp_from_branch(repo_path, branch):
     old_wd = os.getcwd()
     os.chdir(repo_path)
     try:
-        # checkout branch
+        # checkout branch and pull
         subprocess.run(f"git checkout {branch}", shell=True)
+        subprocess.run(f"git pull", shell=True)
         # copy content to tmp location
         subprocess.run(f"cp -rp {repo_path}/* {tmp.name}", shell=True)
     except:
@@ -75,8 +76,9 @@ def git_checkout_branch(repo_path, branch):
     old_wd = os.getcwd()
     os.chdir(repo_path)
     try:
-        # checkout branch
-        subprocess.run(f"git checkout -B {branch}", shell=True)
+        # checkout branch and pull
+        subprocess.run(f"git checkout {branch}", shell=True)
+        subprocess.run(f"git pull", shell=True)
     except:
         return f"Could not checkout {branch}, check status of git repo at {repo_path}"
     os.chdir(old_wd)
