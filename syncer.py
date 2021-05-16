@@ -1,5 +1,6 @@
 import configparser
 import json
+
 import schedule
 from datetime import datetime
 import os
@@ -67,9 +68,22 @@ def get_dataset(name):
     dataset = json.loads(dataset_json)
     return dataset
 
+def contains_git_repo(local_dir):
+    process = subprocess.run(f"git -C {local_dir} rev-parse", shell=True)
+    if process.returncode != 0:
+        return False
+    return True
+
+def git_branch_exists(local_dir, branch):
+    process = subprocess.run(f"git -C {local_dir} rev-parse --verify {branch}", shell=True)
+    if process.returncode != 0:
+        return False
+    return True
+
 def clone_git_repo(url, local_dir):
     try:
-        subprocess.run(f"git clone {url} {local_dir}", shell=True)
+        if not contains_git_repo(local_dir):
+            subprocess.run(f"git clone {url} {local_dir}", shell=True)
     except:
         return f"Could not clone, check if {local_dir} exists and is not empty"
 
@@ -78,15 +92,24 @@ def init_dataset_repo(dataset_name, local_dir):
     input_dataset = get_dataset(dataset_name)
     # clone git repo
     clone_git_repo(input_dataset['master'], local_dir)
+    # create/check ground-truth branch
+    if not git_branch_exists(local_dir, "ground-truth"):
+        create_step_branch("ground-truth", local_dir)
 
 def create_step_branch(branch_name, local_dir):
     old_wd = os.getcwd()
     os.chdir(local_dir)
     try:
-        subprocess.run(f"git checkout -b {branch_name}", shell=True)
-        subprocess.run(f"git push --set-upstream origin {branch_name}", shell=True)
+        process = subprocess.run(f"git show-branch refs/remotes/origin/{branch_name}", shell=True)
+        if process.returncode == 0:
+            # remote branch exists - get this one
+            subprocess.run(f"git checkout --track origin/{branch_name}", shell=True)
+        else:
+            # create new branch and push to remote
+            subprocess.run(f"git checkout -b {branch_name}", shell=True)
+            subprocess.run(f"git push --set-upstream origin {branch_name}", shell=True)
     except:
-        return f"Could not create branch, check if {branch_name} already exists"
+        return f"Could not create branch, check status of branch {branch_name} manually"
     os.chdir(old_wd)
 
 def dataset_register_branch(dataset_name, branch):
