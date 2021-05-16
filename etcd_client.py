@@ -56,3 +56,13 @@ def read_recursive(key):
 
 def directory(key):
     return client.read(key, recursive=True)
+
+
+def lock(id):
+    lock = etcd.Lock(client, id)
+    lock.acquire(
+        blocking=True, # will block until the lock is acquired
+        lock_ttl=None, # lock will live until we release it
+        timeout=300    # timeout for lock acquirement
+        )
+    return lock

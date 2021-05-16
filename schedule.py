@@ -3,13 +3,14 @@ from apscheduler.triggers.cron import CronTrigger
 #import docker
 import configparser
 import json
+import base64
 import os
 import logging
 import subprocess
 import requests
 from pathlib import Path
 import tempfile
-from etcd_client import get
+from etcd_client import get, lock
 
 
 EXECUTOR_URL = "http://0.0.0.0:8081/run"
@@ -49,6 +50,19 @@ def run_container(container, command, env, tool, dataset):
     return "done"
 """
 ##### New pipeline method #####################################################
+
+class VotingLockWaitExpired(Exception):
+    pass
+
+def acquire_voting_lock(dataset):
+    _dataset = get(f"dataset/{dataset['name']}")
+    _dataset = json.loads(_dataset.replace("'", '"'))
+    _dataset_id_b64 = str(base64.b64encode(_dataset['master'].encode("utf-8")), "utf-8")
+    # use dataset master as id to not introduce constraints on dataset name
+    _lock = lock(_dataset_id_b64)
+    if not _lock.is_acquired:
+        raise VotingLockWaitExpired("Wating timeout for Voting Lock expired!")
+    return _lock
 
 def create_tmp_from_branch(repo_path, branch):
     '''Creates a temporary copy of the input data branch'''
@@ -92,6 +106,8 @@ def git_commit_push_branch(repo_path):
 
 def voting_mock(repo_path, dataset):
     '''This is a voting mock that copies node branch to ground-truth'''
+    # try to get distributed voting lock
+    voting_lock = acquire_voting_lock(dataset)
     old_wd = os.getcwd()
     os.chdir(repo_path)
     try:
@@ -103,6 +119,8 @@ def voting_mock(repo_path, dataset):
     except:
         return f"Could not commit + push, check status of git repo at {repo_path}"
     os.chdir(old_wd)
+    # release distributed voting lock
+    voting_lock.release()
 
 def get_tool_image(tool_name):
     '''Retrieves tool image from federation'''
