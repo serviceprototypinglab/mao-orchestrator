@@ -142,15 +142,12 @@ def pipeline_step_init(step):
     if step['input_dataset'] != None:
         input_dataset_name = step['input_dataset']
         input_dataset_path = f'{importdir}/{input_dataset_name}'
-        input_dataset_branch = f"{step['name']}-{user}"
         init_dataset_repo(input_dataset_name, input_dataset_path)
-        create_step_branch(input_dataset_branch, input_dataset_path)
-        dataset_register_branch(input_dataset_name, input_dataset_branch)
-
         # update step dict
         step['input_dataset'] = {}
         step['input_dataset']['name'] = input_dataset_name
-        step['input_dataset']['branch'] = input_dataset_branch
+        # input to next step is always based on ground-truth
+        step['input_dataset']['branch'] = "ground-truth"
 
 
     # prepare output dataset
