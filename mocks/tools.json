@@ -16,5 +16,14 @@
         "code_repo": "https://github.com/foo/bardata",
         "artefact": "docker_images",
         "description": "A Docker image security scanner"
+    },
+    {
+        "name": "demo-pipeline-init",
+        "author": "Daniel",
+        "image": "daniel/security-scanner",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/foo/bardata",
+        "artefact": "docker_images",
+        "description": "A Docker image security scanner"
     }
 ]

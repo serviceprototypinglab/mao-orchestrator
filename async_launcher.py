@@ -87,8 +87,11 @@ async def init(request):
 @routes.post('/pipeline/init')
 async def init(request):
     data = await request.json()
+    status = 200
     response = syncer.pipeline_init(data['name'], data['steps'])
-    return web.json_response(response)
+    if not response['ok']:
+        status = 400
+    return web.json_response(response, status=status)
 
 # Run a pipeline (requires ssh configs in docker, WIP)
 @routes.post('/pipeline/run')

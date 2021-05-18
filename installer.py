@@ -9,257 +9,18 @@ import numpy as np
 from apscheduler.triggers.cron import CronTrigger
 from typing import List
 from pathlib import Path
-from shutil import which
+from shutil import ExecError, which
 from marshmallow import fields, EXCLUDE
 import marshmallow_objects as marshmallow
 from requests.exceptions import HTTPError
 
-class MaoClient:
-
-    # TODO maybe make _URL configurable
-    _URL = "http://127.0.0.1:8080"
-    _URL_TOOLS = "registry/tools"
-    _URL_DATASETS = "registry/datasets"
-    _URL_PIPELINE = "pipeline"
-
-    class Tool(marshmallow.Model):
-        name = fields.Str(required=True)
-        image = fields.Str(required=True)
-        author = fields.Str()
-        # fields.Url does not work here for repo URL as we can also have SSH endpints
-        # e.g. git@my.git-server.com/project1
-        data_repo = fields.Str()
-        code_repo = fields.Str()
-        artefact = fields.Str()
-        # TODO maybe remove load_only from description in future
-        description = fields.Str(load_only=False)
-        federation_registered = fields.Bool(missing=False, load_only=True)
-        instance_scheduled = fields.Bool(missing=False, load_only=True)
-
-        @staticmethod
-        def _api_get_tools():
-            """Returns a list of tools registered with MAO from the API"""
-            try:
-                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_TOOLS}")
-                r.raise_for_status()
-                _tools = r.json()
-                _result = []
-                for tool in _tools:
-                    _result.append(MaoClient._remove_prefix(tool))
-                return(_result)
-            except HTTPError as e:
-                print(e)
-
-        @staticmethod
-        def _api_get_tool(name: str):
-            """Returns detailed configuration of a single MAO tool"""
-            try:
-                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_TOOLS}/{name}")
-                r.raise_for_status()
-                _tool = json.loads(r.json())
-                return(_tool)
-            except HTTPError as e:
-                print(e)
-
-        @classmethod
-        def list(cls):
-            """Returns a list of tools registered with MAO"""
-            tools = []
-            _tool_names = cls._api_get_tools()
-            for tool_name in _tool_names:
-                _result = cls._api_get_tool(tool_name)
-                _result['name'] = tool_name
-                tool = cls.load(_result)
-                tools.append(tool)
-            return tools
-
-        def add(self):
-            _tool = self.dump()
-            try:
-                r = requests.post(f"{MaoClient._URL}/{MaoClient._URL_TOOLS}", json=_tool)
-                r.raise_for_status()
-            except HTTPError as e:
-                print(e)
-
-    class Dataset(marshmallow.Model):
-        name = fields.Str(required=True)
-        master = fields.Str(required=True)
-        nodes = fields.List(fields.Str(), required=True)
-
-        @staticmethod
-        def _api_get_dataset(name):
-            """Returns detailed configuration of a single MAO dataset"""
-            try:
-                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_DATASETS}/{name}")
-                r.raise_for_status()
-                _dataset = json.loads(r.json())
-                return(_dataset)
-            except HTTPError as e:
-                print(e)
-
-        @staticmethod
-        def _api_get_datasets():
-            """Returns a list of datasets registered with MAO from the API"""
-            try:
-                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_DATASETS}")
-                r.raise_for_status()
-                _datasets = r.json()
-                _result = []
-                for dataset in _datasets:
-                    _result.append(MaoClient._remove_prefix(dataset))
-                return(_result)
-            except HTTPError as e:
-                print(e)
-        
-        @classmethod
-        def list(cls):
-            """Returns a list of datasets registered with MAO"""
-            datasets = []
-            _dataset_names = cls._api_get_datasets()
-            for dataset_name in _dataset_names:
-                _result = cls._api_get_dataset(dataset_name)
-                _result['name'] = dataset_name
-                dataset = cls.load(_result)
-                datasets.append(dataset)
-            return datasets
-
-    class Pipeline(marshmallow.Model):
-        tool = fields.Str(required=True)
-        dataset = fields.Str(required=True)
-        cmd = fields.Str(default=None, allow_none=True)
-        env = fields.Dict(default=None, allow_none=True)
-        docker_socket = fields.Bool(default=False)
-        cron = fields.Str(load_only=True)
-
-        @staticmethod
-        def _api_get_pipelines():
-            """Returns a list of pipelines registered with MAO from the API"""
-            try:
-                r = requests.get(f"{MaoClient._URL}/{MaoClient._URL_PIPELINE}")
-                r.raise_for_status()
-                _tools = r.json()
-                return(_tools)
-            except HTTPError as e:
-                print(e)
-
-        def init(self):
-            """Initialize new pipeline on MAO instance"""
-            _pipeline = self.dump()
-            try:
-                r = requests.post(f"{MaoClient._URL}/{MaoClient._URL_PIPELINE}/init", json=_pipeline)
-                r.raise_for_status()
-            except HTTPError as e:
-                print(e)
-
-        def run(self, cron: str):
-            """Run pipeline with specific cron configuration"""
-            _pipeline = self.dump()
-            try:
-                r = requests.post(f"{MaoClient._URL}/{MaoClient._URL_PIPELINE}/run", json={
-                    "name": _pipeline['tool'],
-                    "cron": cron
-                })
-                r.raise_for_status()
-            except HTTPError as e:
-                print(e)
-
-        @classmethod
-        def list(cls):
-            """Returns a list of pipelines registered with instance"""
-            pipelines = []
-            _pipeline_data = cls._api_get_pipelines()
-            for pipeline in _pipeline_data:
-                _tmp_pipe = cls.load(pipeline, unknown=EXCLUDE)
-                pipelines.append(_tmp_pipe)
-            return pipelines
-
-    @staticmethod
-    def _remove_prefix(path):
-        """Removes prefixed from absolute etcd paths"""
-        _result = path.split('/')
-        _last_index = len(_result)-1
-        return _result[_last_index]
-
-class MaoMarketplace:
-
-    _URL = "https://mao-mao-research.github.io/hub/api"
-    # local mock URL for development
-    # use 'serve_local_marketplace.sh' in the /mocks directory to use local marketplace data
-    # _URL = "http://127.0.0.1:8333/"
-    _URL_TOOLS = "tools.json"
-    _URL_FEDERATIONS = "federations.json"
-
-    class MarketplaceNotReachable(Exception):
-        pass
-
-    class Federation(marshmallow.Model):
-        name = fields.Str(required=True)
-        description = fields.Str(required=True)
-        contacts = fields.List(fields.Email(), required=True)
-
-        @staticmethod
-        def _get_federations():
-            """Retrieves federations from MAO marketplace"""
-
-            _response = requests.get(f'{MaoMarketplace._URL}/{MaoMarketplace._URL_FEDERATIONS}')
-            if not _response.ok:
-                raise MaoMarketplace.MarketplaceNotReachable(
-                    ("Fetching tools form marketplace failed, "
-                    f"check if your instance can reach {MaoMarketplace._URL}/{MaoMarketplace._URL_FEDERATIONS}")
-                    )
-
-            _federations = _response.json()
-            return _federations
-
-        @classmethod
-        def list(cls):
-            market = cls._get_federations()
-            federations = []
-            for fed in market:
-                federations.append(MaoMarketplace.Federation.load(fed))
-            return federations
-
-    class Tool(MaoClient.Tool):
-
-        @staticmethod
-        def _api_get_tool(name: str):
-            raise NotImplementedError
-
-        @staticmethod
-        def _api_get_tools():
-            """Retrieves federations from MAO marketplace"""
-
-            _response = requests.get(f'{MaoMarketplace._URL}/{MaoMarketplace._URL_TOOLS}')
-            if not _response.ok:
-                raise MaoMarketplace.MarketplaceNotReachable(
-                    ("Fetching tools form marketplace failed, "
-                    f"check if your instance can reach {MaoMarketplace._URL}/{MaoMarketplace._URL_TOOLS}")
-                    )
-
-            _tools = _response.json()
-            return _tools
-
-        @classmethod
-        def list(cls):
-            """Returns a list of tools available in the MAO marketplace"""
-            tools = []
-            _tools_json = cls._api_get_tools()
-            for tool in _tools_json:
-                tool = cls.load(tool)
-                tools.append(tool)
-            return tools
-
-        def add(self):
-            raise NotImplementedError
+import api_client as MaoClient
+import marketplace as MaoMarketplace
 
 class Installer:
 
     # MAO orchestrator dependencies
     dependencies = ['docker', 'docker-compose']
-
-    def __init__(self):
-        self.mao = MaoClient()
-        self.market = MaoMarketplace()
 
     def install(self):
         """Runs the interactive installer CLI"""
@@ -334,20 +95,83 @@ class Installer:
     def initialize(self):
 
         try:
+            # let user choose init-way, via pipeline or single tool
+            _options = [
+                "Import existing pipelines from the MAO marketplace",  # 0
+                "Register standalone tools from the MAO marketplace"   # 1
+            ]
+            Installer._print_options(_options)
+            _input = input("\nPlease choose an option: ")
+            _selected_option = Installer._parse_numeric_single(_input, _options)
+            
+            if _selected_option == 0:
+                # import pipelines
+                # get pipelines from marketplace
+                _pipelines_market = MaoMarketplace.Pipeline.list()
+                # get pipelines from local instance
+                _pipelines_local = MaoClient.Pipeline.list()
+                for pipe in _pipelines_local:
+                    pipe.instance_scheduled = True
+                _pipelines = np.array(Installer._merge_tools(_pipelines_local, _pipelines_market))
+
+                print("\nAvailable MAO Pipelines:")
+                Installer._print_pipelines(_pipelines)
+
+                print("\nPlease select pipelines for activation on your instance (e.g. 1 2 4):")
+                _input = input()
+                print("") # insert blank line
+                try:
+                    _selected_pipelines = Installer._parse_numeric_multi(_input, _pipelines)
+                    for selected_pipeline in list(_pipelines[_selected_pipelines]):
+                        if selected_pipeline.instance_scheduled:
+                            print(f"{selected_pipeline.name} already present on your instance, readding currently not supported, skipping ...\n")
+                            continue
+                        api_result = selected_pipeline.init()
+                        if not api_result.get('ok', False) and 'missing_tools' in api_result.get('errors', None):
+                            _missing_tools = api_result['errors']['missing_tools']
+                            _add_missing_tools = Installer._ask_yes_no_question(
+                                f"The following missing tools have been detected: {_missing_tools}\n" \
+                                "Do you want the installer to add them from the marketplace?"
+                                )
+                            if _add_missing_tools:
+                                self._add_tools(_missing_tools)
+                            else:
+                                print(f"Skipped pipeline {selected_pipeline.name}, continue with next one ...\n")
+                                continue
+                            api_result = selected_pipeline.init()
+                            print("") # insert blank line
+                            if not api_result.get('ok', False):
+                                raise Exception("Pipeline initialization failed irrecoverably.")
+                        print(f"Successfully added pipeline {selected_pipeline.name}, continue with next one ...\n")
+
+                except (TypeError, IndexError, ValueError) as e:
+                    print(e)
+                    exit(1)
+
+                # TODO rework program flow
+                exit(0)
+                
+            elif _selected_option == 1:
+                # register standalone tools
+                pass
+
+            ############ old init code below ################
+
             # get MAO tools from different sources
             # get tools from current federation
-            _tools_fed = self.mao.Tool.list()
+            _tools_fed = MaoClient.Tool.list()
             for tool in _tools_fed:
                 tool.federation_registered = True
             # get tools from marketplace
-            _tools_market = self.market.Tool.list()
+            _tools_market = MaoMarketplace.Tool.list()
             _tools = np.array(Installer._merge_tools(_tools_fed, _tools_market))
             # get pipelines from instance
-            _pipelines = self.mao.Pipeline.list()
-            for pipeline in _pipelines:
-                for tool in _tools:
-                    if pipeline.tool == tool.name:
-                        tool.instance_scheduled = True
+            _pipelines = MaoClient.Pipeline.list()
+            _pipelines_market = MaoMarketplace.Pipeline.list()
+ #           for pipeline in _pipelines:
+ #               for tool in _tools:
+ #                   if pipeline.tool == tool.name:
+ #                       tool.instance_scheduled = True
         except requests.exceptions.RequestException as e:
             print(f"\n [Error] The following error occurred while trying to reach the orchestrator: \n {e}")
             print("\n Are you sure the MAO orchestrator is up and running?")
@@ -364,7 +188,7 @@ class Installer:
         print("") # insert blank line
         try:
             _selected_tools = Installer._parse_numeric_multi(_input, _tools)
-            _datasets = self.mao.Dataset.list()
+            _datasets = MaoClient.Dataset.list()
             # loop over select tool indexes
             for selected in list(_tools[_selected_tools]):
                 print(f"> Registering tool {selected.name}")
@@ -410,7 +234,7 @@ class Installer:
         return list(tools.values())
 
     def marketplace_fed_cli(self):
-        federations = self.market.Federation.list()
+        federations = MaoMarketplace.Federation.list()
         print("") # insert blank line
         print("Available federations on the MAO marketplace:")
         Installer._print_federation(federations)
@@ -469,6 +293,15 @@ class Installer:
             print(f"[{i}] {tool.name}, " \
                 f"federation {Installer._print_boolean_symbol(tool.federation_registered)}, " \
                 f"instance {Installer._print_boolean_symbol(tool.instance_scheduled)}")
+
+    @staticmethod
+    def _print_pipelines(pipelines):
+        for i, pipeline in enumerate(pipelines):
+            print(f"[{i}] {pipeline.name}, " \
+                f"instance {Installer._print_boolean_symbol(pipeline.instance_scheduled)}"
+                )
+            if hasattr(pipeline, 'description'):
+                print(f"\tDescription: '{pipeline.description}'")
     
     @staticmethod
     def _print_datasets(datasets: List[MaoClient.Dataset]):
@@ -508,6 +341,21 @@ class Installer:
         else:
             print(f"'{_answer}' does not match the expected input of 'y' for yes and 'n' for no. Please try again...")
             return Installer._ask_yes_no_question(prompt)
+
+    def _add_tools(self, tool_names: List):
+        """Tries to add a list of tools to the current instance based on their names"""
+        _tools_market = MaoMarketplace.Tool.list()
+
+        for tool in _tools_market:
+            if tool.name in tool_names:
+                print(f"> Adding new tool {tool.name} to federation.")
+                tool.add()
+                tool_names.remove(tool.name)
+
+        if len(tool_names) != 0:
+            # some tools have not been found on the marketplace
+            raise Exception(f"The following tools have not been found on the marketplace: {tool_names}")
+            
 
     def _create_install_directories(self):
         """Create directory structure and permissions for installation"""

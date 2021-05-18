@@ -5,6 +5,7 @@ import schedule
 from datetime import datetime
 import os
 import subprocess
+from etcd import EtcdKeyNotFound
 from etcd_client import write, get
 import sqlalchemy
 from sqlalchemy import Table, Column, String, select, cast
@@ -50,14 +51,22 @@ def remove_job(id):
 def pipeline_list():
     # read from psql pipeline store
     _query = select(
-            [psql_pipeline.c.options]
+            [psql_pipeline.c.name, psql_pipeline.c.steps]
         )
-    # only fetch one pipeline entry from psql as they have to be unique
     _pipelines = []
     _result = psql_con.execute(_query).fetchall()
     for pipeline in _result:
         print(pipeline)
-        _pipelines.extend(pipeline)
+        _result_obj = {}
+        _result_obj['name'] = pipeline['name']
+        _result_obj['steps'] = pipeline['steps']
+        # remove branch/name dict and return only name in result
+        for step in _result_obj['steps']:
+            if step['input_dataset'] != None:
+                step['input_dataset'] = step['input_dataset']['name']
+            if step['output_dataset'] != None:
+                step['output_dataset'] = step['output_dataset']['name']
+        _pipelines.append(_result_obj)
     return _pipelines
 
 def get_dataset(name):
@@ -121,11 +130,35 @@ def dataset_register_branch(dataset_name, branch):
         dataset['nodes'] = nodes
         write(f"dataset/{dataset_name}", dataset)
 
+def verify_pipeline_step(step):
+    try:
+        _tool = get(f"tools/{step['tool']}")
+    except EtcdKeyNotFound:
+        return False, step['tool']
+    return True, step['tool']
+
 ###### New pipeline methods ###################################################
 
 def pipeline_init(name, steps):
     '''Initializes new MAO pipeline'''
-    
+
+    # verify pipeline definition
+    _missing_tools = []
+    for step in steps:
+        _step_ok, _tool = verify_pipeline_step(step)
+        if not _step_ok:
+            _missing_tools.append(_tool)
+    if len(_missing_tools) != 0:
+        return {
+            'name': name,
+            'steps': [],
+            'ok': False,
+            'errors': {
+                'missing_tools': _missing_tools
+                }
+            }
+
+    # initialize individual steps if pipeline def ok
     for step in steps:
         pipeline_step_init(step)
 
@@ -133,7 +166,7 @@ def pipeline_init(name, steps):
     _new_pipeline = psql_pipeline.insert().values(name=name, steps=steps)
     psql_con.execute(_new_pipeline)
 
-    return {'name': name, 'steps': steps}
+    return {'name': name, 'steps': steps, 'ok': True}
 
 def pipeline_step_init(step):
     '''Initializes a single MAO pipeline step'''
