@@ -59,7 +59,7 @@ class Pipeline(marshmallow.Model):
         _pipeline = self.dump()
         try:
             r = requests.post(f"{_URL}/{_URL_PIPELINE}/run", json={
-                "name": _pipeline['tool'],
+                "name": self.name,
                 "cron": cron
             })
             r.raise_for_status()

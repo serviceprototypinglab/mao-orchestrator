@@ -96,6 +96,3 @@ class Pipeline(MaoClient.Pipeline):
             pipeline = cls.load(pipeline)
             pipelines.append(pipeline)
         return pipelines
-
-    def run(self, cron: str):
-        raise NotImplementedError

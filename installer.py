@@ -142,6 +142,18 @@ class Installer:
                             print("") # insert blank line
                             if not api_result.get('ok', False):
                                 raise Exception("Pipeline initialization failed irrecoverably.")
+
+                        _ask_schedule = Installer._ask_yes_no_question(f"Do you want to schedule {selected_pipeline.name} now?")
+                        if _ask_schedule:
+                            # run/schedule pipeline
+                            # ask user to enter cron schedule for tool
+                            print(f"Please enter crontab to schedule {selected_pipeline.name} (e.g. '0 12 * * *'):")
+                            _input = input()
+                            print("") # insert blank line
+                            _cron = Installer._parse_cron(_input)
+
+                            selected_pipeline.run(_cron)
+
                         print(f"Successfully added pipeline {selected_pipeline.name}, continue with next one ...\n")
 
                 except (TypeError, IndexError, ValueError) as e:
