@@ -6,7 +6,7 @@
                 "name": "acquisition",
                 "tool": "busybox",
                 "env": {
-                    "DEMO_TOOL_ENV": "foo.bar.env"
+                    "DEMO_TOOL_ENV": "{{ MAO_PRIVATE_VARIABLE }}"
                 },
                 "cmd": [
                     "sh",
@@ -45,7 +45,8 @@
                 "name": "acquisition",
                 "tool": "demo-pipeline-init",
                 "env": {
-                    "DEMO_TOOL_ENV": "foo.bar.env"
+                    "DEMO_TOOL_ENV": "{{ MAO_PRIVATE_VARIABLE }}",
+                    "DEMO_TOOL_ENV_NON_PRIVATE": "foo.bar"
                 },
                 "cmd": [
                     "sh",
@@ -123,7 +124,8 @@
                 "name": "acquisition",
                 "tool": "demo-pipeline-init",
                 "env": {
-                    "DEMO_TOOL_ENV": "foo.bar.env"
+                    "DEMO_TOOL_ENV": "{{ MAO_PRIVATE_VARIABLE }}",
+                    "DEMO_TOOL_ENV_NON_PRIVATE": "foo.bar"
                 },
                 "cmd": [
                     "sh",

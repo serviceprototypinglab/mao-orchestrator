@@ -1,3 +1,4 @@
+import collections
 import requests
 import json
 from marshmallow import fields, EXCLUDE
@@ -26,6 +27,9 @@ class PipelineStep(marshmallow.Model):
     cron = fields.Str(load_only=True)
 
 class Pipeline(marshmallow.Model):
+
+    PRIVATE_VARIABLE_PLACEHOLDER = "{{ MAO_PRIVATE_VARIABLE }}"
+
     name = fields.Str(required=True)
     steps = fields.List(marshmallow.NestedModel(PipelineStep))
     instance_scheduled = fields.Bool(missing=False, load_only=True)
@@ -65,6 +69,20 @@ class Pipeline(marshmallow.Model):
             r.raise_for_status()
         except HTTPError as e:
             print(e)
+
+    def get_private_vars(self):
+        _priv_vars = collections.defaultdict(dict)
+        for step in self.steps:
+            for k, v in step.env.items():
+                if v == Pipeline.PRIVATE_VARIABLE_PLACEHOLDER:
+                    _priv_vars[step.name][k] = ""
+        return _priv_vars
+
+    def set_private_vars(self, private_vars):
+        for step in self.steps:
+            if step.name in private_vars:
+                for k, v in private_vars[step.name].items():
+                    step.env[k] = v
 
     @classmethod
     def list(cls):

@@ -126,6 +126,20 @@ class Installer:
                         if selected_pipeline.instance_scheduled:
                             print(f"{selected_pipeline.name} already present on your instance, readding currently not supported, skipping ...\n")
                             continue
+
+                        _private_vars = selected_pipeline.get_private_vars()
+                        # check if private vars exist
+                        if _private_vars:
+                            for step, env in _private_vars.items():
+                                for var in env.keys():
+                                    print(f"Please enter a value for the private variable {var}:")
+                                    _input = input()
+                                    print("") # insert blank line
+
+                                    _private_vars[step][var] = _input
+
+                        selected_pipeline.set_private_vars(_private_vars)
+
                         api_result = selected_pipeline.init()
                         # check if api returned missing datasets
                         if not api_result.get('ok', False) and 'missing_datasets' in api_result.get('errors', None):
