@@ -127,6 +127,13 @@ class Installer:
                             print(f"{selected_pipeline.name} already present on your instance, readding currently not supported, skipping ...\n")
                             continue
                         api_result = selected_pipeline.init()
+                        # check if api returned missing datasets
+                        if not api_result.get('ok', False) and 'missing_datasets' in api_result.get('errors', None):
+                            print(f"[Error] Skipped pipeline initialization for {selected_pipeline.name}, " \
+                                f"as the following datasets were discovered to be missing: {api_result['errors']['missing_datasets']}.")
+                            continue
+
+                        # check if api returned missing tools
                         if not api_result.get('ok', False) and 'missing_tools' in api_result.get('errors', None):
                             _missing_tools = api_result['errors']['missing_tools']
                             _add_missing_tools = Installer._ask_yes_no_question(

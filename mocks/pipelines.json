@@ -115,5 +115,44 @@
                 "output_dataset": "mao-demo2-dataset"
             }
         ]
+    },
+    {
+        "name": "marketplace-pipe-bad-1",
+        "description": "Runs the marketplace-pipe-1 tool for demoing purposes",
+        "steps": [{
+                "name": "acquisition",
+                "tool": "demo-pipeline-init",
+                "env": {
+                    "DEMO_TOOL_ENV": "foo.bar.env"
+                },
+                "cmd": [
+                    "sh",
+                    "-c",
+                    "wget https://github.com/argoproj/argo-cd/archive/refs/heads/master.zip && unzip master.zip -d /usr/src/app/data"
+                ],
+                "docker_socket": false,
+                "input_dataset": null,
+                "output_dataset": "mao-demo-dataset"
+            },
+            {
+                "name": "assessment",
+                "tool": "skan",
+                "env": {
+                    "DEMO_TOOL_ENV": "foo.bar.env"
+                },
+                "cmd": [
+                    "manifest",
+                    "-f",
+                    "/usr/src/app/input/argo-cd-master",
+                    "-o",
+                    "json",
+                    "--outputfile",
+                    "/usr/src/app/data/output_argo.json"
+                ],
+                "docker_socket": false,
+                "input_dataset": "i-do-not-exist",
+                "output_dataset": "mao-demo2-dataset"
+            }
+        ]
     }
 ]

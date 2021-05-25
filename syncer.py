@@ -130,12 +130,33 @@ def dataset_register_branch(dataset_name, branch):
         dataset['nodes'] = nodes
         write(f"dataset/{dataset_name}", dataset)
 
-def verify_pipeline_step(step):
+def verify_pipeline_step_tools(step):
     try:
         _tool = get(f"tools/{step['tool']}")
     except EtcdKeyNotFound:
         return False, step['tool']
     return True, step['tool']
+
+def verify_pipeline_step_datasets(step):
+    _missing_datasets = []
+
+    # check input dataset
+    try:
+        if step['input_dataset'] != None:
+            _input = get(f"dataset/{step['input_dataset']}")
+    except EtcdKeyNotFound:
+        _missing_datasets.append(step['input_dataset'])
+
+    # check output dataset
+    try:
+        _output = get(f"dataset/{step['output_dataset']}")
+    except EtcdKeyNotFound:
+        _missing_datasets.append(step['output_dataset'])
+    
+    if len(_missing_datasets) == 0:
+        return True, _missing_datasets
+    else:
+        return False, _missing_datasets
 
 ###### New pipeline methods ###################################################
 
@@ -143,20 +164,25 @@ def pipeline_init(name, steps):
     '''Initializes new MAO pipeline'''
 
     # verify pipeline definition
-    _missing_tools = []
+    _errors = {
+        'missing_tools': [],
+        'missing_datasets':  []
+    }
+    _result = {'name': name, 'steps': steps, 'ok': True}
     for step in steps:
-        _step_ok, _tool = verify_pipeline_step(step)
-        if not _step_ok:
-            _missing_tools.append(_tool)
-    if len(_missing_tools) != 0:
-        return {
-            'name': name,
-            'steps': [],
-            'ok': False,
-            'errors': {
-                'missing_tools': _missing_tools
-                }
-            }
+        _step_tools_ok, _tool = verify_pipeline_step_tools(step)
+        if not _step_tools_ok:
+            _errors['missing_tools'].append(_tool)
+        _step_datasets_ok, _datasets = verify_pipeline_step_datasets(step)
+        if not _step_datasets_ok:
+            _errors['missing_datasets'].extend(_datasets)
+
+    if len(_errors['missing_tools']) != 0 or \
+        len(_errors['missing_datasets']) != 0:
+            _result['ok'] = False
+            _result['steps'] = []
+            _result['errors'] = _errors
+            return _result
 
     # initialize individual steps if pipeline def ok
     for step in steps:
@@ -166,7 +192,7 @@ def pipeline_init(name, steps):
     _new_pipeline = psql_pipeline.insert().values(name=name, steps=steps)
     psql_con.execute(_new_pipeline)
 
-    return {'name': name, 'steps': steps, 'ok': True}
+    return _result
 
 def pipeline_step_init(step):
     '''Initializes a single MAO pipeline step'''
