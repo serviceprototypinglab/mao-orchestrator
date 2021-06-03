@@ -95,167 +95,91 @@ class Installer:
     def initialize(self):
 
         try:
-            # let user choose init-way, via pipeline or single tool
-            _options = [
-                "Import existing pipelines from the MAO marketplace",  # 0
-                "Register standalone tools from the MAO marketplace"   # 1
-            ]
-            Installer._print_options(_options)
-            _input = input("\nPlease choose an option: ")
-            _selected_option = Installer._parse_numeric_single(_input, _options)
-            
-            if _selected_option == 0:
-                # import pipelines
-                # get pipelines from marketplace
-                _pipelines_market = MaoMarketplace.Pipeline.list()
-                # get pipelines from local instance
-                _pipelines_local = MaoClient.Pipeline.list()
-                for pipe in _pipelines_local:
-                    pipe.instance_scheduled = True
-                _pipelines = np.array(Installer._merge_tools(_pipelines_local, _pipelines_market))
+            # import pipelines
+            # get pipelines from marketplace
+            _pipelines_market = MaoMarketplace.Pipeline.list()
+            # get pipelines from local instance
+            _pipelines_local = MaoClient.Pipeline.list()
+            for pipe in _pipelines_local:
+                pipe.instance_scheduled = True
+            _pipelines = np.array(Installer._merge_tools(_pipelines_local, _pipelines_market))
 
-                print("\nAvailable MAO Pipelines ('✓'/'✗' indicate if pipline is already registered with this instance or federation):\n")
-                Installer._print_pipelines(_pipelines)
+            print("\nAvailable MAO Pipelines ('✓'/'✗' indicate if pipline is already registered with this instance or federation):\n")
+            Installer._print_pipelines(_pipelines)
 
-                print("\nPlease select pipelines for activation on this instance (e.g. 1 2 4):")
-                _input = input()
-                print("") # insert blank line
-                try:
-                    _selected_pipelines = Installer._parse_numeric_multi(_input, _pipelines)
-                    for selected_pipeline in list(_pipelines[_selected_pipelines]):
-                        if selected_pipeline.instance_scheduled:
-                            print(f"{selected_pipeline.name} already present on your instance, readding currently not supported, skipping ...\n")
+            print("\nPlease select pipelines for activation on this instance (e.g. 1 2 4):")
+            _input = input()
+            print("") # insert blank line
+            try:
+                _selected_pipelines = Installer._parse_numeric_multi(_input, _pipelines)
+                for selected_pipeline in list(_pipelines[_selected_pipelines]):
+                    if selected_pipeline.instance_scheduled:
+                        print(f"{selected_pipeline.name} already present on your instance, readding currently not supported, skipping ...\n")
+                        continue
+
+                    _private_vars = selected_pipeline.get_private_vars()
+                    # check if private vars exist
+                    if _private_vars:
+                        for step, env in _private_vars.items():
+                            for var in env.keys():
+                                print(f"Please enter a value for the private variable {var}:")
+                                _input = input()
+                                print("") # insert blank line
+
+                                _private_vars[step][var] = _input
+
+                    selected_pipeline.set_private_vars(_private_vars)
+
+                    api_result = selected_pipeline.init()
+                    # check if api returned an error
+                    if not api_result.get('ok', False):
+                        # check if api returned missing datasets
+                        if len(api_result.get('errors').get('missing_datasets')) >= 1:
+                            print(f"[Error] Skipped pipeline initialization for {selected_pipeline.name}, " \
+                                f"as the following datasets were discovered to be missing: {api_result['errors']['missing_datasets']}.")
                             continue
 
-                        _private_vars = selected_pipeline.get_private_vars()
-                        # check if private vars exist
-                        if _private_vars:
-                            for step, env in _private_vars.items():
-                                for var in env.keys():
-                                    print(f"Please enter a value for the private variable {var}:")
-                                    _input = input()
-                                    print("") # insert blank line
-
-                                    _private_vars[step][var] = _input
-
-                        selected_pipeline.set_private_vars(_private_vars)
-
-                        api_result = selected_pipeline.init()
-                        # check if api returned an error
-                        if not api_result.get('ok', False):
-                            # check if api returned missing datasets
-                            if len(api_result.get('errors').get('missing_datasets')) >= 1:
-                                print(f"[Error] Skipped pipeline initialization for {selected_pipeline.name}, " \
-                                    f"as the following datasets were discovered to be missing: {api_result['errors']['missing_datasets']}.")
+                        # check if api returned missing tools
+                        if len(api_result.get('errors').get('missing_tools')) >= 1:
+                            _missing_tools = api_result['errors']['missing_tools']
+                            _add_missing_tools = Installer._ask_yes_no_question(
+                                f"The following missing tools have been detected: {_missing_tools}\n" \
+                                "Do you want the installer to add them from the marketplace?"
+                                )
+                            if _add_missing_tools:
+                                self._add_tools(_missing_tools)
+                            else:
+                                print(f"Skipped pipeline {selected_pipeline.name}, continue with next one ...\n")
                                 continue
-
-                            # check if api returned missing tools
-                            if len(api_result.get('errors').get('missing_tools')) >= 1:
-                                _missing_tools = api_result['errors']['missing_tools']
-                                _add_missing_tools = Installer._ask_yes_no_question(
-                                    f"The following missing tools have been detected: {_missing_tools}\n" \
-                                    "Do you want the installer to add them from the marketplace?"
-                                    )
-                                if _add_missing_tools:
-                                    self._add_tools(_missing_tools)
-                                else:
-                                    print(f"Skipped pipeline {selected_pipeline.name}, continue with next one ...\n")
-                                    continue
-                                api_result = selected_pipeline.init()
-                                print("") # insert blank line
-                                if not api_result.get('ok', False):
-                                    raise Exception("Pipeline initialization failed irrecoverably.")
-
-                        _ask_schedule = Installer._ask_yes_no_question(f"Do you want to schedule {selected_pipeline.name} now?\n")
-                        if _ask_schedule:
-                            # run/schedule pipeline
-                            # ask user to enter cron schedule for tool
-                            print(f"Please enter crontab to schedule {selected_pipeline.name} (e.g. '0 12 * * *'):")
-                            print(f"  > Hint: if you are not sure what to enter here, please contact your federation " \
-                                    "operator to get more information about pipeline schedules.")
-                            _input = input()
+                            api_result = selected_pipeline.init()
                             print("") # insert blank line
-                            _cron = Installer._parse_cron(_input)
+                            if not api_result.get('ok', False):
+                                raise Exception("Pipeline initialization failed irrecoverably.")
 
-                            selected_pipeline.run(_cron)
+                    _ask_schedule = Installer._ask_yes_no_question(f"Do you want to schedule {selected_pipeline.name} now?", new_line=True)
+                    if _ask_schedule:
+                        # run/schedule pipeline
+                        # ask user to enter cron schedule for tool
+                        print(f"Please enter crontab to schedule {selected_pipeline.name} (e.g. '0 12 * * *'):")
+                        print(f"  > Hint: if you are not sure what to enter here, please contact your federation " \
+                                "operator to get more information about pipeline schedules.")
+                        _input = input()
+                        print("") # insert blank line
+                        _cron = Installer._parse_cron(_input)
 
-                        print(f"Successfully added pipeline {selected_pipeline.name}, continue with next one ...\n")
+                        selected_pipeline.run(_cron)
 
-                except (TypeError, IndexError, ValueError) as e:
-                    print(e)
-                    exit(1)
+                    print(f"Successfully added pipeline {selected_pipeline.name}, continue with next one ...\n")
 
-                # TODO rework program flow
-                exit(0)
+            except (TypeError, IndexError, ValueError) as e:
+                print(e)
+                exit(1)
+
+            print("Instance successfully initialized, re-run the initialization command to register additional pipelines.")
                 
-            elif _selected_option == 1:
-                # register standalone tools
-                pass
-
-            ############ old init code below ################
-
-            # get MAO tools from different sources
-            # get tools from current federation
-            _tools_fed = MaoClient.Tool.list()
-            for tool in _tools_fed:
-                tool.federation_registered = True
-            # get tools from marketplace
-            _tools_market = MaoMarketplace.Tool.list()
-            _tools = np.array(Installer._merge_tools(_tools_fed, _tools_market))
-            # get pipelines from instance
-            _pipelines = MaoClient.Pipeline.list()
-            _pipelines_market = MaoMarketplace.Pipeline.list()
- #           for pipeline in _pipelines:
- #               for tool in _tools:
- #                   if pipeline.tool == tool.name:
- #                       tool.instance_scheduled = True
         except requests.exceptions.RequestException as e:
             print(f"\n [Error] The following error occurred while trying to reach the orchestrator: \n {e}")
             print("\n Are you sure the MAO orchestrator is up and running?")
-            exit(1)
-
-        # display tool selection on CLI
-        print("Initialize instance...")
-        print("\nAvailable MAO Tools:")
-        # print tools
-        Installer._print_tools(_tools)
-
-        print("\nPlease select tools for activate on current instance (e.g. 1 2 4):")
-        _input = input()
-        print("") # insert blank line
-        try:
-            _selected_tools = Installer._parse_numeric_multi(_input, _tools)
-            _datasets = MaoClient.Dataset.list()
-            # loop over select tool indexes
-            for selected in list(_tools[_selected_tools]):
-                print(f"> Registering tool {selected.name}")
-                # make sure tool is registered with federation
-                if not selected.federation_registered:
-                    selected.add()
-                
-                # dataset handling
-                print("Available datasets:")
-                Installer._print_datasets(_datasets)
-                print(f"\nPlease select dataset to use with tool {selected.name} (e.g. 1):")
-                _input = input()
-                print("") # insert blank line
-                _selected_dataset = _datasets[Installer._parse_numeric_single(_input, _datasets)]
-
-                # initialize pipeline
-                _pipeline = MaoClient.Pipeline(tool=selected.name, dataset=_selected_dataset.name)
-                _pipeline.init()
-
-                # run/schedule pipeline
-                # ask user to enter cron schedule for tool
-                print(f"Please enter crontab to schedule {selected.name} (e.g. '0 12 * * *'):")
-                _input = input()
-                print("") # insert blank line
-                _cron = Installer._parse_cron(_input)
-
-                _pipeline.run(_cron)
-
-        except (TypeError, IndexError, ValueError) as e:
-            print(e)
             exit(1)
 
     @staticmethod
@@ -368,9 +292,11 @@ class Installer:
         return '✓' if bool else '✗'
 
     @staticmethod
-    def _ask_yes_no_question(prompt):
+    def _ask_yes_no_question(prompt, new_line=False):
         
         _answer = input(f"{prompt} - [y/n]: ")
+        if new_line:
+            print("")
         if _answer == "y":
             return True
         elif _answer == "n":
