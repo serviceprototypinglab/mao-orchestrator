@@ -141,28 +141,30 @@ class Installer:
                         selected_pipeline.set_private_vars(_private_vars)
 
                         api_result = selected_pipeline.init()
-                        # check if api returned missing datasets
-                        if not api_result.get('ok', False) and 'missing_datasets' in api_result.get('errors', None):
-                            print(f"[Error] Skipped pipeline initialization for {selected_pipeline.name}, " \
-                                f"as the following datasets were discovered to be missing: {api_result['errors']['missing_datasets']}.")
-                            continue
-
-                        # check if api returned missing tools
-                        if not api_result.get('ok', False) and 'missing_tools' in api_result.get('errors', None):
-                            _missing_tools = api_result['errors']['missing_tools']
-                            _add_missing_tools = Installer._ask_yes_no_question(
-                                f"The following missing tools have been detected: {_missing_tools}\n" \
-                                "Do you want the installer to add them from the marketplace?"
-                                )
-                            if _add_missing_tools:
-                                self._add_tools(_missing_tools)
-                            else:
-                                print(f"Skipped pipeline {selected_pipeline.name}, continue with next one ...\n")
+                        # check if api returned an error
+                        if not api_result.get('ok', False):
+                            # check if api returned missing datasets
+                            if len(api_result.get('errors').get('missing_datasets')) >= 1:
+                                print(f"[Error] Skipped pipeline initialization for {selected_pipeline.name}, " \
+                                    f"as the following datasets were discovered to be missing: {api_result['errors']['missing_datasets']}.")
                                 continue
-                            api_result = selected_pipeline.init()
-                            print("") # insert blank line
-                            if not api_result.get('ok', False):
-                                raise Exception("Pipeline initialization failed irrecoverably.")
+
+                            # check if api returned missing tools
+                            if len(api_result.get('errors').get('missing_tools')) >= 1:
+                                _missing_tools = api_result['errors']['missing_tools']
+                                _add_missing_tools = Installer._ask_yes_no_question(
+                                    f"The following missing tools have been detected: {_missing_tools}\n" \
+                                    "Do you want the installer to add them from the marketplace?"
+                                    )
+                                if _add_missing_tools:
+                                    self._add_tools(_missing_tools)
+                                else:
+                                    print(f"Skipped pipeline {selected_pipeline.name}, continue with next one ...\n")
+                                    continue
+                                api_result = selected_pipeline.init()
+                                print("") # insert blank line
+                                if not api_result.get('ok', False):
+                                    raise Exception("Pipeline initialization failed irrecoverably.")
 
                         _ask_schedule = Installer._ask_yes_no_question(f"Do you want to schedule {selected_pipeline.name} now?")
                         if _ask_schedule:
