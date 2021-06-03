@@ -114,10 +114,10 @@ class Installer:
                     pipe.instance_scheduled = True
                 _pipelines = np.array(Installer._merge_tools(_pipelines_local, _pipelines_market))
 
-                print("\nAvailable MAO Pipelines:")
+                print("\nAvailable MAO Pipelines ('✓'/'✗' indicate if pipline is already registered with this instance or federation):\n")
                 Installer._print_pipelines(_pipelines)
 
-                print("\nPlease select pipelines for activation on your instance (e.g. 1 2 4):")
+                print("\nPlease select pipelines for activation on this instance (e.g. 1 2 4):")
                 _input = input()
                 print("") # insert blank line
                 try:
@@ -332,8 +332,8 @@ class Installer:
     @staticmethod
     def _print_pipelines(pipelines):
         for i, pipeline in enumerate(pipelines):
-            print(f"[{i}] {pipeline.name}, " \
-                f"instance {Installer._print_boolean_symbol(pipeline.instance_scheduled)}"
+            print(f"[{i}] {pipeline.name}, registered on: " \
+                f"this instance {Installer._print_boolean_symbol(pipeline.instance_scheduled)}"
                 )
             if hasattr(pipeline, 'description'):
                 print(f"\tDescription: '{pipeline.description}'")
