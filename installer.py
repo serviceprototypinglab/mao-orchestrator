@@ -166,11 +166,13 @@ class Installer:
                                 if not api_result.get('ok', False):
                                     raise Exception("Pipeline initialization failed irrecoverably.")
 
-                        _ask_schedule = Installer._ask_yes_no_question(f"Do you want to schedule {selected_pipeline.name} now?")
+                        _ask_schedule = Installer._ask_yes_no_question(f"Do you want to schedule {selected_pipeline.name} now?\n")
                         if _ask_schedule:
                             # run/schedule pipeline
                             # ask user to enter cron schedule for tool
                             print(f"Please enter crontab to schedule {selected_pipeline.name} (e.g. '0 12 * * *'):")
+                            print(f"  > Hint: if you are not sure what to enter here, please contact your federation " \
+                                    "operator to get more information about pipeline schedules.")
                             _input = input()
                             print("") # insert blank line
                             _cron = Installer._parse_cron(_input)
