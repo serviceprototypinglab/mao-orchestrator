@@ -1,4 +1,5 @@
 from aiohttp import web
+import etcd
 import syncer
 import etcd_client
 import json
@@ -66,6 +67,15 @@ async def register(request):
     return web.json_response(etcd_client.get("tools/{}".format(data['name'])))
 
 ##### New pipeline endpoints ##################################################
+
+# Get pipeline from MAO registry
+@routes.get('/registry/pipelines/{pipeline}')
+async def write(request):
+    try:
+        _result = syncer.registry_pipeline_get(request.match_info['pipeline'])
+        return web.json_response(json.loads(_result))
+    except etcd.EtcdKeyNotFound:
+        return web.json_response({"error": "Pipeline not found in registry"}, status=404)
 
 # Register dataset with new schema
 @routes.post('/registry/datasets')

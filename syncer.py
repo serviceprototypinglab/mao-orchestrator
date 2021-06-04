@@ -165,6 +165,12 @@ def verify_pipeline_step_datasets(step):
 
 ###### New pipeline methods ###################################################
 
+def registry_pipeline_add(name):
+    return write(f"pipelines/{name}", {})
+
+def registry_pipeline_get(name):
+    return get(f"pipelines/{name}")
+
 def pipeline_init(name, steps):
     '''Initializes new MAO pipeline'''
 
@@ -196,6 +202,9 @@ def pipeline_init(name, steps):
     # psql pipeline store
     _new_pipeline = psql_pipeline.insert().values(name=name, steps=steps)
     psql_con.execute(_new_pipeline)
+
+    # add pipeline to federation registry
+    registry_pipeline_add(name)
 
     return _result
 
