@@ -59,7 +59,9 @@ class Installer:
             self.instance_name = input("Enter MAO instance name (must match operator provided name): ")
             self.instance_ip = input("Enter the public IP of the new MAO instance: ")
             self.git_email = input("Enter your git config email address (used for MAO commits): ")
-            self.ssh_key_dir = input("Enter directory containing ssh keys (used for git authentication): ")
+            self.ssh_key_dir = input("The following option (path to ssh keys) can be skipped if you plan to have a single node federation for testing purposes.\n" \
+                "Just enter a dummy path that exist on your machine.\n" \
+                "Enter directory containing ssh keys (used for git authentication): ")
 
             if not _join_federation:
                 self.etcd_operator_input = f"{self.instance_name}=http://{self.instance_ip}:2380"
