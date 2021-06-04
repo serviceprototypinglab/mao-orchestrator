@@ -9,6 +9,7 @@ _URL = "http://127.0.0.1:8080"
 _URL_TOOLS = "registry/tools"
 _URL_DATASETS = "registry/datasets"
 _URL_PIPELINE = "pipeline"
+_URL_BARE = "bare-repo/init"
 
 def _remove_prefix(path):
         """Removes prefixed from absolute etcd paths"""
@@ -194,3 +195,38 @@ class Dataset(marshmallow.Model):
             dataset = cls.load(_result)
             datasets.append(dataset)
         return datasets
+
+    def dump(self, *args, **kwargs):
+        _partial = super(Dataset, self).dump(*args, **kwargs)
+        _partial['body'] = {}
+        _partial['body']['master'] = _partial.pop('master')
+        _partial['body']['nodes'] = _partial.pop('nodes')
+        return _partial
+
+    def add(self):
+        _dataset = self.dump()
+        try:
+            r = requests.post(f"{_URL}/{_URL_DATASETS}", json=_dataset)
+            r.raise_for_status()
+        except HTTPError as e:
+            print(e)
+
+class BareRepo(marshmallow.Model):
+    name = fields.Str(required=True)
+    path = fields.Str(dump_only=True)
+
+    @staticmethod
+    def _api_init_bare(name):
+        """Returns detailed configuration of a single MAO dataset"""
+        try:
+            r = requests.post(f"{_URL}/{_URL_BARE}", json={"name": name})
+            r.raise_for_status()
+            _bare = r.json()
+            return _bare
+        except HTTPError as e:
+            print(e)
+    
+    def init(self):
+        """Returns a list of datasets registered with MAO"""
+        _result = self._api_init_bare(self.name)
+        self.path = _result['path']

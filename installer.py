@@ -5,6 +5,7 @@ import os
 import requests
 import json
 import numpy as np
+import subprocess
 
 from apscheduler.triggers.cron import CronTrigger
 from typing import List
@@ -77,6 +78,7 @@ class Installer:
         self.etcd_subdir = "etcd"
         self.mao_subdir = "data"
         self.psql_subdir = "psql"
+        self.bare_subdir = "bare"
 
         # create MAO install directory
         # allow for shell-like shortcuts in path - returns absolute path
@@ -136,25 +138,49 @@ class Installer:
                         # check if api returned missing datasets
                         if len(api_result.get('errors').get('missing_datasets')) >= 1:
                             print(f"[Error] Skipped pipeline initialization for {selected_pipeline.name}, " \
-                                f"as the following datasets were discovered to be missing: {api_result['errors']['missing_datasets']}.")
-                            continue
+                                f"as the following datasets were discovered to be missing: {api_result['errors']['missing_datasets']}.\n")
+                            
+                            _ask_local_only = Installer._ask_yes_no_question(
+                                f"You have the possibility to add the missing datasets as local-only to the federation.\n" \
+                                "This is especially useful for demoing and explorational use cases in single node federations.\n" \
+                                "Acquired data will only be saved locally on this instance and not shared with other instances in the federation.\n" \
+                                "Do you want to add the missing datasets as local-only?"
+                                )
+
+                            if _ask_local_only:
+                                # create and init local-only git structure
+                                for dataset in api_result['errors']['missing_datasets']:
+                                    _bare = MaoClient.BareRepo.load({"name": dataset})
+                                    _bare.init()
+                                    _dataset = MaoClient.Dataset.load({
+                                        "name": _bare.name,
+                                        "master": _bare.path,
+                                        "nodes": []
+                                    })
+                                    _dataset.add()
+
+                                # try to add pipeline again after registering missing datasets
+                                api_result = selected_pipeline.init()
+                            else:
+                                continue
 
                         # check if api returned missing tools
-                        if len(api_result.get('errors').get('missing_tools')) >= 1:
-                            _missing_tools = api_result['errors']['missing_tools']
-                            _add_missing_tools = Installer._ask_yes_no_question(
-                                f"The following missing tools have been detected: {_missing_tools}\n" \
-                                "Do you want the installer to add them from the marketplace?"
-                                )
-                            if _add_missing_tools:
-                                self._add_tools(_missing_tools)
-                            else:
-                                print(f"Skipped pipeline {selected_pipeline.name}, continue with next one ...\n")
-                                continue
-                            api_result = selected_pipeline.init()
-                            print("") # insert blank line
-                            if not api_result.get('ok', False):
-                                raise Exception("Pipeline initialization failed irrecoverably.")
+                        if not api_result.get('ok', False):
+                            if len(api_result.get('errors').get('missing_tools')) >= 1:
+                                _missing_tools = api_result['errors']['missing_tools']
+                                _add_missing_tools = Installer._ask_yes_no_question(
+                                    f"The following missing tools have been detected: {_missing_tools}\n" \
+                                    "Do you want the installer to add them from the marketplace?"
+                                    )
+                                if _add_missing_tools:
+                                    self._add_tools(_missing_tools)
+                                else:
+                                    print(f"Skipped pipeline {selected_pipeline.name}, continue with next one ...\n")
+                                    continue
+                                api_result = selected_pipeline.init()
+                                print("") # insert blank line
+                                if not api_result.get('ok', False):
+                                    raise Exception("Pipeline initialization failed irrecoverably.")
 
                     _ask_schedule = Installer._ask_yes_no_question(f"Do you want to schedule {selected_pipeline.name} now?", new_line=True)
                     if _ask_schedule:
@@ -331,7 +357,9 @@ class Installer:
             Path(f"{self.install_dir}/{self.etcd_subdir}").mkdir(parents=True, exist_ok=True)
             Path(f"{self.install_dir}/{self.psql_subdir}").mkdir(parents=True, exist_ok=True)
             Path(f"{self.install_dir}/{self.mao_subdir}").mkdir(parents=True, exist_ok=True)
+            Path(f"{self.install_dir}/{self.bare_subdir}").mkdir(parents=True, exist_ok=True)
             os.chown(f"{self.install_dir}/{self.mao_subdir}", _mao_uid, -1)
+            os.chown(f"{self.install_dir}/{self.bare_subdir}", _mao_uid, -1)
         except PermissionError:
             print(f"[Error] Permission to create directory '{self.install_dir}' denied.")
             exit(1)
