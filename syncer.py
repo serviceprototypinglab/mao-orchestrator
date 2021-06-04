@@ -116,6 +116,11 @@ def create_step_branch(branch_name, local_dir):
         else:
             # create new branch and push to remote
             subprocess.run(f"git checkout -b {branch_name}", shell=True)
+            # add .gitkeep to allow pushing of newly created branch
+            subprocess.run(f"touch .gitkeep", shell=True)
+            subprocess.run(f"git add .gitkeep", shell=True)
+            subprocess.run(f"git commit -m 'mao init'", shell=True)
+            # push new branch
             subprocess.run(f"git push --set-upstream origin {branch_name}", shell=True)
     except:
         return f"Could not create branch, check status of branch {branch_name} manually"
@@ -249,3 +254,9 @@ def pipeline_run(name, cron):
         return {"pipeline": name, "job_id": output}
 
 ###### End of new pipeline methods ############################################
+
+def bare_repo_init(name):
+    """Initialize a new bare repo for local-only use-cases"""
+    _repo_path = f"{importdir}/bare_{name}"
+    subprocess.run(f"git init --bare {_repo_path}", shell=True)
+    return {"path": _repo_path}

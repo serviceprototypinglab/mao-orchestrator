@@ -119,6 +119,13 @@ async def register(request):
 async def register(request):
     return web.json_response(syncer.remove_job(request.match_info['id']))
 
+# Create a local bare repository
+@routes.post('/bare-repo/init')
+async def init(request):
+    data = await request.json()
+    response = syncer.bare_repo_init(data['name'])
+    return web.json_response(response)
+
 app.add_routes(routes)
 if __name__ == '__main__':
     web.run_app(app)
