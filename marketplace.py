@@ -86,13 +86,3 @@ class Pipeline(MaoClient.Pipeline):
 
         _pipelines = _response.json()
         return _pipelines
-
-    @classmethod
-    def list(cls):
-        """Returns a list of pipelines available in the MAO marketplace"""
-        pipelines = []
-        _pipelines_json = cls._api_get_pipelines()
-        for pipeline in _pipelines_json:
-            pipeline = cls.load(pipeline)
-            pipelines.append(pipeline)
-        return pipelines

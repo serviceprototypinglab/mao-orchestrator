@@ -286,8 +286,9 @@ class Installer:
     @staticmethod
     def _print_pipelines(pipelines):
         for i, pipeline in enumerate(pipelines):
-            print(f"[{i}] {pipeline.name}, registered on: " \
-                f"this instance {Installer._print_boolean_symbol(pipeline.instance_scheduled)}"
+            print(f"[{i}] {pipeline.name} | registered on: " \
+                f"this instance {Installer._print_boolean_symbol(pipeline.instance_scheduled)},",
+                f"this federation {Installer._print_boolean_symbol(pipeline.federation_registered)}"
                 )
             if hasattr(pipeline, 'description'):
                 print(f"\tDescription: '{pipeline.description}'")

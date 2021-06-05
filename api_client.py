@@ -8,6 +8,7 @@ from requests.exceptions import HTTPError
 _URL = "http://127.0.0.1:8080"
 _URL_TOOLS = "registry/tools"
 _URL_DATASETS = "registry/datasets"
+_URL_PIPELINE_REG = "registry/pipelines"
 _URL_PIPELINE = "pipeline"
 _URL_BARE = "bare-repo/init"
 
@@ -34,6 +35,7 @@ class Pipeline(marshmallow.Model):
     name = fields.Str(required=True)
     steps = fields.List(marshmallow.NestedModel(PipelineStep))
     instance_scheduled = fields.Bool(missing=False, load_only=True)
+    federation_registered = fields.Bool(missing=False, load_only=True)
 
     @staticmethod
     def _api_get_pipelines():
@@ -46,12 +48,34 @@ class Pipeline(marshmallow.Model):
         except HTTPError as e:
             print(e)
 
+    def update_fed_status(self):
+        """Checks registration status of pipeline with federation registry"""
+        try:
+            r = requests.get(f"{_URL}/{_URL_PIPELINE_REG}/{self.name}")
+            if r.status_code == 404:
+                # pipeline not found in registry
+                self.federation_registered = False
+                return False
+            elif r.status_code == 200:
+                # pipeline found in registry
+                self.federation_registered = True
+                return True
+            
+            # check if any other error occurred
+            r.raise_for_status()
+
+        except HTTPError as e:
+            print(e)
+
     def init(self):
         """Initialize new pipeline on MAO instance"""
         _pipeline = self.dump()
         try:
             r = requests.post(f"{_URL}/{_URL_PIPELINE}/init", json=_pipeline)
             r.raise_for_status()
+            # update pipeline state
+            self.update_fed_status()
+            self.instance_scheduled = True
             return r.json()
         except HTTPError as e:
             _json = r.json()
@@ -92,6 +116,7 @@ class Pipeline(marshmallow.Model):
         _pipeline_data = cls._api_get_pipelines()
         for pipeline in _pipeline_data:
             _tmp_pipe = cls.load(pipeline, unknown=EXCLUDE)
+            _tmp_pipe.update_fed_status()
             pipelines.append(_tmp_pipe)
         return pipelines
 
