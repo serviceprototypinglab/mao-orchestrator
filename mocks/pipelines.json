@@ -1,6 +1,6 @@
 [
     {
-        "name": "demo-pipeline-1",
+        "name": "demo-pipeline-1-working-private",
         "description": "Runs the Skan tool for demoing purposes",
         "steps": [{
                 "name": "acquisition",
@@ -39,13 +39,13 @@
         ]
     },
     {
-        "name": "broken-pipeline-1",
+        "name": "broken-pipeline-1-tools-missing",
         "description": "Runs the Skan tool for demoing purposes",
         "steps": [{
                 "name": "acquisition",
                 "tool": "demo-pipeline-init",
                 "env": {
-                    "DEMO_TOOL_ENV": "{{ MAO_PRIVATE_VARIABLE }}",
+                    "DEMO_TOOL_ENV": "test",
                     "DEMO_TOOL_ENV_NON_PRIVATE": "foo.bar"
                 },
                 "cmd": [
@@ -118,13 +118,13 @@
         ]
     },
     {
-        "name": "marketplace-pipe-bad-1",
+        "name": "marketplace-pipe-bad-1-missing-dataset",
         "description": "Runs the marketplace-pipe-1 tool for demoing purposes",
         "steps": [{
                 "name": "acquisition",
                 "tool": "demo-pipeline-init",
                 "env": {
-                    "DEMO_TOOL_ENV": "{{ MAO_PRIVATE_VARIABLE }}",
+                    "DEMO_TOOL_ENV": "daniel",
                     "DEMO_TOOL_ENV_NON_PRIVATE": "foo.bar"
                 },
                 "cmd": [
@@ -152,8 +152,8 @@
                     "/usr/src/app/data/output_argo.json"
                 ],
                 "docker_socket": false,
-                "input_dataset": "i-do-not-exist",
-                "output_dataset": "mao-demo2-dataset"
+                "input_dataset": "mao-demo-dataset",
+                "output_dataset": "i-do-not-exist"
             }
         ]
     }
