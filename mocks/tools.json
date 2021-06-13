@@ -25,5 +25,23 @@
         "code_repo": "https://github.com/foo/bardata",
         "artefact": "docker_images",
         "description": "A Docker image security scanner"
+    },
+    {
+        "name": "skan",
+        "author": "Gadi Naor",
+        "image": "alcide/skan",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/alcideio/skan",
+        "artefact": "k8s-resources",
+        "description": "Scan Kubernetes resource files , and helm charts for security configurations issues and best practices."
+    },
+    {
+        "name": "busybox",
+        "author": "Erik Andersen",
+        "image": "busybox",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://git.busybox.net/busybox/",
+        "artefact": "multiple",
+        "description": "The Swiss Army Knife of Embedded Linux"
     }
 ]
