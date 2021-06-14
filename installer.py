@@ -6,6 +6,9 @@ import requests
 import json
 import numpy as np
 import subprocess
+import socket
+import ipaddress
+import getpass
 
 from apscheduler.triggers.cron import CronTrigger
 from typing import List
@@ -22,6 +25,8 @@ class Installer:
 
     # MAO orchestrator dependencies
     dependencies = ['docker', 'docker-compose']
+    MAO_DEFAULT_INSTALL_DIR = f"{Path.home()}/mao-instance"
+    MAO_CLI_SPACEING = "   "
 
     def install(self):
         """Runs the interactive installer CLI"""
@@ -34,6 +39,7 @@ class Installer:
 
         # handle input validation exceptions
         try:
+            ### MAO federation join
             # let user choose if we join an existing federation or install a standalone/new federation
             _join_federation = Installer._ask_yes_no_question("Do you want to join an existing MAO federation?")
             if _join_federation:
@@ -54,14 +60,51 @@ class Installer:
                     # ask user for etcd details
                     self.etcd_operator_input = input("\nEnter the operator provided etcd config: ")
                     self.etcd_cluster_state = "existing"
+            print("") # insert blank line
             
-            self.install_dir = input("Enter MAO install directory: ")
-            self.instance_name = input("Enter MAO instance name (must match operator provided name): ")
-            self.instance_ip = input("Enter the public IP of the new MAO instance: ")
-            self.git_email = input("Enter your git config email address (used for MAO commits): ")
-            self.ssh_key_dir = input("The following option (path to ssh keys) can be skipped if you plan to have a single node federation for testing purposes.\n" \
-                "Just enter a dummy path that exist on your machine.\n" \
-                "Enter directory containing ssh keys (used for git authentication): ")
+            ### MAO install directory
+            self.install_dir = input(f"Enter MAO install directory (or leave empty for '{self.MAO_DEFAULT_INSTALL_DIR}'): ")
+            if self.install_dir == "":
+                # empty user input, use default
+                self.install_dir = Installer.MAO_DEFAULT_INSTALL_DIR
+            print("") # insert blank line
+
+            ### MAO instance name
+            self.instance_name = input(f"Enter MAO instance name (if you join a federation, this must match operator provided name; for local-only use cases leave empty to use '{socket.gethostname()}'): ")
+            if self.instance_name == "":
+                # empty user input, use hostname
+                self.instance_name = socket.gethostname()
+            print("") # insert blank line
+
+            ### MAO IP address config
+            print("MAO needs some IP configuration in order to work well in different scenarios, please select the appropriate option:")
+            _ip_selection = [
+                Installer._get_public_ip(),
+                Installer._get_host_ip(),
+                "manual"
+            ]
+            print(f"{self.MAO_CLI_SPACEING}[0] Public IP - in federated setups it might be necessary to use the instances non-local public IP so that other instances can reach your instance, the following IP was auto-detected: {str(_ip_selection[0])}")
+            print(f"{self.MAO_CLI_SPACEING}[1] Host IP - if other instances can reach your instance via an interface IP or in local-only setups you can use the hosts IP, the following IP was auto-detected: {str(_ip_selection[1])}")
+            print(f"{self.MAO_CLI_SPACEING}[2] Manual - manually enter the IP to use for your instance")
+            self.instance_ip = input("Enter your selection for the desired IP setup (e.g. 1): ")
+            self.instance_ip = Installer._parse_numeric_single(self.instance_ip, _ip_selection)
+            self.instance_ip = _ip_selection[self.instance_ip]
+            if self.instance_ip == "manual":
+                self.instance_ip = input("Please enter the IP address to use for your instance configuration: ")
+            Installer._validate_ip(self.instance_ip)
+            print("") # insert blank line
+
+            ### MAO commit e-mail config
+            _default_mail_dummy = f"{getpass.getuser()}@{self.instance_name}"
+            self.git_email = input(f"Enter your git config email address (used for MAO commits; leave empty to use default dummy: {_default_mail_dummy}): ")
+            if self.git_email == "":
+                self.git_email = _default_mail_dummy
+            print("") # insert blank line
+
+            ### MAO SSH path setup
+            self.ssh_key_dir = input("Enter directory containing ssh keys (used for git authentication; leave empty for local-only use cases): ")
+            if self.ssh_key_dir == "":
+                self.ssh_key_dir = None
 
             if not _join_federation:
                 self.etcd_operator_input = f"{self.instance_name}=http://{self.instance_ip}:2380"
@@ -211,6 +254,33 @@ class Installer:
             exit(1)
 
     @staticmethod
+    def _get_public_ip():
+        """Uses public web-service to discover public IP of requesting host"""
+        ip = requests.get("https://checkip.dedyn.io/")
+        if ip.ok:
+            return ip.content.decode("utf-8") 
+        else:
+            return None
+
+    @staticmethod
+    def _get_host_ip():
+        """Returns the interface IP of the local instance"""
+        # Ref: https://stackoverflow.com/a/25850698/3416025
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 1))  # connect() for UDP doesn't send packets, so the IP here is arbitrary
+        return s.getsockname()[0]
+
+    @staticmethod
+    def _validate_ip(ip):
+        """Checks if the input string contains a valid IP address"""
+        try:
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError as e:
+            print(f"[Error] The given IP address is invalid or malformed: {ip}")
+            raise e
+
+    @staticmethod
     def _merge_tools(base: List[MaoClient.Tool], additional: List[MaoClient.Tool]):
         """Merges to lists of MAO tools with precedence on base"""
         
@@ -262,8 +332,8 @@ class Installer:
         if not input.isnumeric():
             raise TypeError(f"Invalid input, {input} is not a number!")
         # check if index is in bounds
-        if int(input) < 0 and int(input) >= len(selection_base):
-            _available_indexes = list(range(0, len(selection_base)-1))
+        if int(input) < 0 or int(input) >= len(selection_base):
+            _available_indexes = list(range(0, len(selection_base)))
             raise IndexError(f"Input '{input}' is not one of {_available_indexes}")
         return int(input)
 
@@ -403,8 +473,7 @@ class Installer:
                     "volumes": [
                         # mount data directory from host
                         f"{self.install_dir}/{self.mao_subdir}:{self.import_dir}",
-                        # mount git used ssh keys directory
-                        f"{self.ssh_key_dir}:/home/user/.ssh"
+                        # handling of ssh key directory below the dict definition due to conditional
                     ],
                     "network_mode": "host",
                     "depends_on": [
@@ -463,5 +532,8 @@ class Installer:
                 }
             }
         }
+
+        # update mao volumes based on ssh-dir conditional
+        compose['services']['mao']['volumes'] += [f"{self.ssh_key_dir}:/home/user/.ssh"] if self.ssh_key_dir is not None else []
 
         return compose
