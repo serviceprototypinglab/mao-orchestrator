@@ -60,9 +60,18 @@ sudo apt-get install python3 python3-pip
 
 ### Installation
 
-Download or clone this git repository to your hosting system via:
+Download or clone this git repository to your hosting system via the following command and change into the newly created directory:
 ```
 git clone https://github.com/serviceprototypinglab/mao-orchestrator
+```
+
+> :warning: **The following Docker image build is subject to change**: This step will not be necessary with the public release of the MAO installer.
+
+Currently the MAO orchestrator images (namely `orchestrator` and `executor`) are not released to a public Docker registry. They currently need to build manually on the new instance locally with the following commands:
+
+```
+docker build -t local/mao -f Dockerfile .
+docker build -t local/executor -f Dockerfile_executor .
 ```
 
 In order to run the installer some Python dependencies have to be installed in order for the installer to run correctly:
