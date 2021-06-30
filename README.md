@@ -37,6 +37,8 @@ The setup process of a new MAO instance is composed of two steps:
 
 If a user wants to join an existing MAO federation it is necessary to approach the federation operator before the installation of the new instance in order to negotiate certain parameters which are used by the installer to join the newly installed orchestrator with the existing federation. The selection of a desired federation to join is supported by the MAO installer which queries and presents existing federations based on the public MAO marketplace. Details can be found below in the `Installation` section.
 
+If you already are or want to become a federation operator please find detailed federation operator instructions in [this](#federation-operator-instructions) separate section.
+
 ### Prerequisites
 
 The MAO orchestrator has requirements that need to be present on the host system before the installation of a new instance. The following section list these requirements and tries to describe how to get them for your specific setup.
@@ -96,7 +98,7 @@ Installation parameters prompted by the installer:
 
 - **MAO install directory**: directory on the host system to install the MAO instance to
 - **MAO instance name**: can be freely chosen in case of new federation or standalone instance, if you like to join an existing one this has to be negotiated with the federation operator
-- **Public IP**: IP address from which other systems can reach the new MAO instance
+- **Public IP**: IP address from which other systems can reach the new MAO instance on port `2380`
 - **Git e-mail address**: used for the data-repository commits executed by the orchestrator
 - **SSH key directory**: path to the directory on the host that holds the SSH key pair used for git data-repository authentication
 
@@ -135,6 +137,43 @@ As a last and optional step the user can enter a time rule to control the schedu
 The steps after the pipeline selection are done for each of the previously selected pipelines individually.
 
 After the `init` command is finished your newly installed MAO instances is up and running with the selected pipelines that if desired are scheduled for regular execution.
+
+## Federation operator instructions
+
+A federation operator in case of MAO takes the role of a central control instance that is somewhat responsible for the federation that he/she operates. Common tasks for the operator or operators might be:
+
+- initial setup of the 1st instance that acts as the foundation of a to be build federation
+- communication with parties that are interested in joining the federation
+- actual technical joining of new instances into the federation
+  - etcd configuration and adding of new member
+  - access control setup to dataset repositories
+- ...
+
+### Adding a new member to etcd
+
+The actual technical step to add a new instance to a MAO federation is the join/add of the new instance to the distributed etcd cluster that is formed by the instances that compose a federation.
+
+As a prerequisite for a new member to join the communication between the other nodes in the federation and the new node on the default etcd port `2380` needs to be possible. This port is used by etcd for inter cluster communication purposes (see [here](https://etcd.io/docs/latest/op-guide/configuration/)).
+
+To add a new instance the following steps need to be carried out on any of the existing instances:
+```
+# find your etcd container - default name: mao-instance_etcd_1
+docker ps
+
+# add new member to etcd
+docker exec -it <etcd-container-name> etcdctl member add <new-instance-name> --peer-urls=http://<new-instance-ip>:2380
+
+# copy contents of the ETCD_INITIAL_CLUSTER variable printed as output of the above command and send it to the new instance user
+
+# check federation state - the newly added instance should show up as "unstarted", this will change as soon as the new instance is joined
+docker exec -it mao-instance_etcd_1 etcdctl member list
+> 4111d80902f896b1, started, mao-instance-3, http://10.0.2.128:2380, http://10.0.2.128:2379, false
+> 7e741d3886624ddf, unstarted, , http://10.0.3.10:2380, , false
+```
+
+### Granting access to dataset repositories
+
+MAO uses a shared git repository server as communication hub for the different datasets. There are no special requirements for the repository server beside the fact that it needs to support SSH as communication and authentication method. In order to make it possible for new instance to participate and write data into the federation datasets the public key of the new instance needs to be granted with read and write privileges to the git repository server(s).
 
 # MAOCTL
 

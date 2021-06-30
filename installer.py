@@ -77,7 +77,8 @@ class Installer:
             print("") # insert blank line
 
             ### MAO IP address config
-            print("MAO needs some IP configuration in order to work well in different scenarios, please select the appropriate option:")
+            print("MAO needs some IP configuration in order to work well in different scenarios.\n"
+                +"Please make sure that your instance can be reached from others via the selected IP on port 2380, select the appropriate option:")
             _ip_selection = [
                 Installer._get_public_ip(),
                 Installer._get_host_ip(),
@@ -305,7 +306,8 @@ class Installer:
 
         print("\nPlease provide the operators with the following information:\n" \
             "- Instance IP-Address\n" \
-            "- Desired instance name")
+            "- Desired instance name\n" \
+            "- SSH public key of this instance for authentication to the dataset repositories")
 
         print("\nJust launch the installer again after the federation operator provided the necessary information.")
         exit(0)
