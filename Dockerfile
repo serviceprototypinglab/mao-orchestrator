@@ -22,7 +22,7 @@ WORKDIR /home/user/
 
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-RUN chown -R user:user /home/user/.ssh
+RUN chown -R user:user /home/user
 
 USER user
 

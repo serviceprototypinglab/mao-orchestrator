@@ -2,24 +2,24 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 #import docker
 import configparser
-import etcd_client
 import json
 import base64
-import glob
 import os
 import logging
-import git
 import subprocess
 import requests
-from datetime import datetime
-import yaml
 from pathlib import Path
+import tempfile
+from etcd_client import get, lock
 
+
+EXECUTOR_URL = "http://0.0.0.0:8081/run"
 
 Path("./infile").mkdir(parents=True, exist_ok=True)
 #docker_client = docker.from_env()
 config = configparser.ConfigParser()
 config.read('config.ini')
+importdir = config['WORKING_ENVIRONMENT']['IMPORTDIR']
 scheduler = AsyncIOScheduler()
 scheduler.add_executor('processpool')
 jobstore = False
@@ -50,31 +50,125 @@ def run_container(container, command, env, tool, dataset):
     return "done"
 """
 ##### New pipeline method #####################################################
-def pipeline_run(image, local_dir, host_dir, env=None, cmd=None, docker_socket=False):
-    json_out = {
-        "image": image,
-        "data_dir": host_dir,
-        "env": env,
-        "cmd": cmd,
-        "docker_socket": docker_socket
-    }
-    r = requests.post('http://0.0.0.0:8081/run', json=json_out)
-    print(r.json())
-    old_wd = os.getcwd()
-    os.chdir(local_dir)
-    subprocess.run(f"git add .", shell=True)
-    subprocess.run(f'git commit -m "auto-exec"', shell=True)
-    subprocess.run(f"git push", shell=True)
-    os.chdir(old_wd)
-    return r.json()
 
-def pipeline_cron(image, local_dir, host_dir, cron, options=None):
+class VotingLockWaitExpired(Exception):
+    pass
+
+def acquire_voting_lock(dataset):
+    _dataset = get(f"dataset/{dataset['name']}")
+    _dataset = json.loads(_dataset.replace("'", '"'))
+    _dataset_id_b64 = str(base64.b64encode(_dataset['master'].encode("utf-8")), "utf-8")
+    # use dataset master as id to not introduce constraints on dataset name
+    _lock = lock(_dataset_id_b64)
+    if not _lock.is_acquired:
+        raise VotingLockWaitExpired("Wating timeout for Voting Lock expired!")
+    return _lock
+
+def create_tmp_from_branch(repo_path, branch):
+    '''Creates a temporary copy of the input data branch'''
+    tmp = tempfile.TemporaryDirectory(dir=importdir)
+    old_wd = os.getcwd()
+    os.chdir(repo_path)
+    try:
+        # checkout branch and pull
+        subprocess.run(f"git checkout {branch}", shell=True)
+        subprocess.run(f"git pull", shell=True)
+        # copy content to tmp location
+        subprocess.run(f"cp -rp {repo_path}/* {tmp.name}", shell=True)
+    except:
+        return f"Could not checkout {branch}, check status of git repo at {repo_path}"
+    os.chdir(old_wd)
+    return tmp
+
+def git_checkout_branch(repo_path, branch):
+    '''Perform checkout of given branch on repo'''
+    old_wd = os.getcwd()
+    os.chdir(repo_path)
+    try:
+        # checkout branch and pull
+        subprocess.run(f"git checkout {branch}", shell=True)
+        subprocess.run(f"git pull", shell=True)
+    except:
+        return f"Could not checkout {branch}, check status of git repo at {repo_path}"
+    os.chdir(old_wd)
+
+def git_commit_push_branch(repo_path):
+    '''Perform commit + push operation on given repo'''
+    old_wd = os.getcwd()
+    os.chdir(repo_path)
+    try:
+        subprocess.run(f"git add .", shell=True)
+        subprocess.run(f'git commit -m "pipeline-exec"', shell=True)
+        subprocess.run(f"git push", shell=True)
+    except:
+        return f"Could not commit + push, check status of git repo at {repo_path}"
+    os.chdir(old_wd)
+
+def voting_mock(repo_path, dataset):
+    '''This is a voting mock that copies node branch to ground-truth'''
+    # try to get distributed voting lock
+    voting_lock = acquire_voting_lock(dataset)
+    old_wd = os.getcwd()
+    os.chdir(repo_path)
+    try:
+        git_checkout_branch(repo_path, 'ground-truth')
+        subprocess.run(f"git push --set-upstream origin ground-truth", shell=True)
+        subprocess.run(f"git merge {dataset['branch']}", shell=True)
+        subprocess.run(f'git commit -m "voting"', shell=True)
+        subprocess.run(f"git push", shell=True)
+    except:
+        return f"Could not commit + push, check status of git repo at {repo_path}"
+    os.chdir(old_wd)
+    # release distributed voting lock
+    voting_lock.release()
+
+def get_tool_image(tool_name):
+    '''Retrieves tool image from federation'''
+    tool_json = get(f"tools/{tool_name}")
+    ## etcd does not like double quotes but json needs them
+    tool_json = tool_json.replace("'", '"')
+    tool_dict = json.loads(tool_json)
+    return tool_dict['image']
+
+
+def pipeline_run(importdir, hostdir, steps):
+    '''Runs pipeline steps using remote executor'''
+    
+    for step in steps:
+        # prepare datasets
+        input_dataset = step['input_dataset']
+        input_copy = None
+        input_copy_path = None
+        if input_dataset is not None:
+            input_copy = create_tmp_from_branch(f"{importdir}/{input_dataset['name']}", 'ground-truth')
+            input_copy_path = input_copy.name.replace(importdir, hostdir)
+        git_checkout_branch(f"{importdir}/{step['output_dataset']['name']}", step['output_dataset']['branch'])
+
+        exec_json = {
+            "image": get_tool_image(step['tool']),
+            "input_dir": input_copy_path,
+            "output_dir": f"{hostdir}/{step['output_dataset']['name']}",
+            "env": step['env'],
+            "cmd": step['cmd'],
+            "docker_socket": step['docker_socket']
+        }
+
+        # execute step via remote executor
+        r = requests.post(EXECUTOR_URL, json=exec_json)
+
+        # push output result + cleanup
+        git_commit_push_branch(f"{importdir}/{step['output_dataset']['name']}")
+        if input_copy is not None:
+            input_copy.cleanup()
+
+        voting_mock(f"{importdir}/{step['output_dataset']['name']}", step['output_dataset'])
+
+def pipeline_cron(name, importdir, hostdir, steps, cron):
     job = scheduler.add_job(
         pipeline_run,
         CronTrigger.from_crontab(cron),
-        args=[image, local_dir, host_dir],
-        kwargs=options,
-        id=image,
+        args=[importdir, hostdir, steps],
+        id=name,
         replace_existing=True,
         misfire_grace_time=64800,
         coalesce=True

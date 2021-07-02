@@ -1,4 +1,5 @@
 from aiohttp import web
+import etcd
 import syncer
 import etcd_client
 import json
@@ -28,7 +29,7 @@ async def datasets(request):
 
 @routes.get('/registry/datasets/{dataset}')
 async def datasets(request):
-    return web.json_response(etcd_client.get(f"dataset/{request.match_info['dataset']}/{request.match_info['node']}"))
+    return web.json_response(etcd_client.get(f"dataset/{request.match_info['dataset']}"))
 
 
 @routes.get('/jobs')
@@ -67,31 +68,47 @@ async def register(request):
 
 ##### New pipeline endpoints ##################################################
 
+# Get pipeline from MAO registry
+@routes.get('/registry/pipelines/{pipeline}')
+async def write(request):
+    try:
+        _result = syncer.registry_pipeline_get(request.match_info['pipeline'])
+        return web.json_response(json.loads(_result))
+    except etcd.EtcdKeyNotFound:
+        return web.json_response({"error": "Pipeline not found in registry"}, status=404)
+
 # Register dataset with new schema
 @routes.post('/registry/datasets')
 async def register(request):
     data = await request.json()
-    etcd_client.write("dataset/{}".format(data['name']), data['body'])
+    # TODO check with Panos: quotes handling inside etcd
+    body = json.dumps(data['body'])
+    etcd_client.write("dataset/{}".format(data['name']), body)
     return web.json_response(etcd_client.get("dataset/{}".format(data['name'])))
 
+# Get list of currently registered pipelines
+@routes.get('/pipeline')
+async def init(request):
+    _pipelines = syncer.pipeline_list()
+    return web.json_response(_pipelines)
+
 # Create the node branch, register and create pipeline config
+# TODO: [Pipeline] maybe switch to /pipeline?
 @routes.post('/pipeline/init')
 async def init(request):
     data = await request.json()
-    tool = data['tool']
-    dataset = data['dataset']
-    env = data.get('env', None)
-    cmd = data.get('cmd', None)
-    docker_socket = data.get('docker_socket', False)
-    response = syncer.pipeline_init(tool, dataset, env=env, cmd=cmd, docker_socket=docker_socket)
-    return web.json_response(response)
+    status = 200
+    response = syncer.pipeline_init(data['name'], data['steps'])
+    if not response['ok']:
+        status = 400
+    return web.json_response(response, status=status)
 
 # Run a pipeline (requires ssh configs in docker, WIP)
 @routes.post('/pipeline/run')
 async def init(request):
     data = await request.json()
     name = data['name']
-    cron = 'none'
+    cron = None
     if 'cron' in data:
         cron = data['cron']
     response = syncer.pipeline_run(name, cron)
@@ -111,6 +128,13 @@ async def register(request):
 @routes.delete('/jobs/{id}')
 async def register(request):
     return web.json_response(syncer.remove_job(request.match_info['id']))
+
+# Create a local bare repository
+@routes.post('/bare-repo/init')
+async def init(request):
+    data = await request.json()
+    response = syncer.bare_repo_init(data['name'])
+    return web.json_response(response)
 
 app.add_routes(routes)
 if __name__ == '__main__':

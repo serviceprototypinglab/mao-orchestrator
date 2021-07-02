@@ -56,5 +56,8 @@ if __name__ == '__main__':
             list_scheduled()
         elif args.tool == 'stop':
             stop(args.id)
-    elif args.command == 'install':
-        Installer().run()
+    elif args.command == 'instance':
+        if args.instance == 'install':
+            Installer().install()
+        elif args.instance == 'init':
+            Installer().initialize()

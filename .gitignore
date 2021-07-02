@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 bootstrap.sh
 *.json
+!mocks/*
 *.csv
 infile/
 .vscode/
