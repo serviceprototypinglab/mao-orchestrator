@@ -1,7 +1,11 @@
 # MAO Orchestrator
 
-Distributed orchestrator for the [MAO-MAO collaborative research](https://mao-mao-research.github.io/) framework. Allows scheduled execution of containerized artefacts and semi-automatic data management workflows.
+Distributed orchestrator for the [MAO-MAO collaborative research community](https://mao-mao-research.github.io/) and other metric observations.
+Allows scheduled execution of containerized acquisition/analytics/curation tools and semi-automatic data management workflows (represented as pipelines) across federated nodes.
+Handles resilient invocations, anomaly detection, ground truth production through consensus voting, and (via integration with Renku) provenance/reproducibility of insights into observations.
+
 This implementation makes use of an etcd cluster for member discovery and metadata sharing and a simple git interface for managing data sets.
+It may sound complicated, but is easy to install through a dedicated installer (see below) and a recommended starting point for all data scientists faced with diverging perspectives or competing analysis results!
 
 ## MAO Glossary
 
