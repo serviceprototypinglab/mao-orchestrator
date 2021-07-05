@@ -118,42 +118,87 @@
         ]
     },
     {
-        "name": "marketplace-pipe-bad-1-missing-dataset",
-        "description": "Runs the marketplace-pipe-1 tool for demoing purposes",
+        "name": "skan-demo",
+        "description": "Runs the sKan scanner on fetched k8s resources.",
         "steps": [{
                 "name": "acquisition",
-                "tool": "demo-pipeline-init",
-                "env": {
-                    "DEMO_TOOL_ENV": "daniel",
-                    "DEMO_TOOL_ENV_NON_PRIVATE": "foo.bar"
-                },
+                "tool": "busybox",
                 "cmd": [
                     "sh",
                     "-c",
-                    "wget https://github.com/argoproj/argo-cd/archive/refs/heads/master.zip && unzip master.zip -d /usr/src/app/data"
+                    "rm -rf /usr/src/app/data/argo-cd-master && wget https://github.com/argoproj/argo-cd/archive/refs/heads/master.zip && unzip master.zip -d /usr/src/app/data"
                 ],
                 "docker_socket": false,
                 "input_dataset": null,
-                "output_dataset": "mao-demo-dataset"
+                "output_dataset": "skan-acq-demo-dataset"
             },
             {
                 "name": "assessment",
                 "tool": "skan",
-                "env": {
-                    "DEMO_TOOL_ENV": "foo.bar.env"
-                },
                 "cmd": [
                     "manifest",
                     "-f",
-                    "/usr/src/app/input/argo-cd-master",
+                    "/usr/src/app/input",
                     "-o",
                     "json",
                     "--outputfile",
-                    "/usr/src/app/data/output_argo.json"
+                    "/usr/src/app/data/output_skan.json"
                 ],
                 "docker_socket": false,
-                "input_dataset": "mao-demo-dataset",
-                "output_dataset": "i-do-not-exist"
+                "input_dataset": "skan-acq-demo-dataset",
+                "output_dataset": "skan-asses-demo-dataset"
+            },
+            {
+                "name": "format",
+                "tool": "busybox",
+                "cmd": [
+                    "sh",
+                    "-c",
+                    "mv /usr/src/app/input/output_skan.json /usr/src/app/data/output_skan_$(date +%Y-%m-%d).json && sleep 5"
+                ],
+                "docker_socket": false,
+                "input_dataset": "skan-asses-demo-dataset",
+                "output_dataset": "skan-result-demo-dataset"
+            }
+        ]
+    },
+    {
+        "name": "ArtifactHUB Collector",
+        "description": "Metadata collector for the ArtifactHUB repository.",
+        "steps": [{
+                "name": "data-acquisition",
+                "tool": "artifacthub_collector",
+                "env": {
+                    "ARTIFACT_HUB_API_KEY_ID": "{{ MAO_PRIVATE_VARIABLE }}",
+                    "ARTIFACT_HUB_API_KEY_SECRET": "{{ MAO_PRIVATE_VARIABLE }}"
+                },
+                "docker_socket": false,
+                "input_dataset": null,
+                "output_dataset": "artifacthub-collector-dataset"
+            }
+        ]
+    },
+    {
+        "name": "DockerHub Collector",
+        "description": "Metadata collector for DockerHub.",
+        "steps": [{
+                "name": "data-acquisition",
+                "tool": "dockerhub_collector",
+                "docker_socket": false,
+                "input_dataset": null,
+                "output_dataset": "dockerhub-collector-dataset"
+            }
+        ]
+    },
+    {
+        "name": "AWS SAR Analysis",
+        "description": "Collect and assess several kinds of metadata around serverless functions.",
+        "steps": [{
+                "name": "execution",
+                "tool": "aws-sar-analyser",
+                "docker_socket": false,
+                "input_dataset": null,
+                "output_dataset": "aws-sar-dataset"
             }
         ]
     }
