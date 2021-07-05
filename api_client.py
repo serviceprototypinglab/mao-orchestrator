@@ -97,10 +97,13 @@ class Pipeline(marshmallow.Model):
 
     def get_private_vars(self):
         _priv_vars = collections.defaultdict(dict)
+        # iterate over all pipeline steps
         for step in self.steps:
-            for k, v in step.env.items():
-                if v == Pipeline.PRIVATE_VARIABLE_PLACEHOLDER:
-                    _priv_vars[step.name][k] = ""
+            # check if step contains any environment definitions
+            if step.env != None:
+                for k, v in step.env.items():
+                    if v == Pipeline.PRIVATE_VARIABLE_PLACEHOLDER:
+                        _priv_vars[step.name][k] = ""
         return _priv_vars
 
     def set_private_vars(self, private_vars):
