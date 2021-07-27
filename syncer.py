@@ -186,7 +186,7 @@ def pipeline_init(name, steps):
             _errors['missing_tools'].add(_tool)
         _step_datasets_ok, _datasets = verify_pipeline_step_datasets(step)
         if not _step_datasets_ok:
-            _errors['missing_datasets'].add(_datasets)
+            _errors['missing_datasets'] = _errors['missing_datasets'].union(set(_datasets))
 
     if len(_errors['missing_tools']) != 0 or \
         len(_errors['missing_datasets']) != 0:
