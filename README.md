@@ -188,26 +188,27 @@ python3 maoctl.py --help
 ```
 to begin.
 
-# New Pipeline
+The MAO command-line client offers a variety of help options to guide the user trough its functions. But some of the most common commands are listed below:
 
-The new pipeline is as yet NOT integrated with the client. Thus setting up and running a client must be done via direct HTTP requests for now.
-
-Example:
-
-- Register a tool as usual via the CLI:
+- Register a new tool via the CLI:
 ```
-python3 maoctl.py tool add ...
+python maoctl.py tool add <name> <author> <image> <data_repo> <code_repo> <artefact>
 ```
-- Register a new dataset, this uses a new endpoint:
+- Register a new dataset via the CLI:
 ```
-curl -X POST http://0.0.0.0:8080/registry/datasets  -H 'content-type: application/json' -d '{"name": "name-of-dataset", "body": {"master": "git-link", "nodes": []}}'
-```
-- Register a pipeline. This associates a tool with the dataset and creates a new branch with your username as the branch name.
-```
-curl -X POST http://0.0.0.0:8080/pipeline/init  -H 'content-type: application/json' -d '{"tool": "name-of-tool", "dataset":"name-of-dataset"}'
+python maoctl.py dataset add <name> '<ssh-git-url>'
 ```
 
-- Run the pipeline. You can use crontab syntax to use the persistent shceduler (this can be omitted to run in ad-hoc mode).
+# API Overview
+
+The following list of copyable curl samples show the main functions of the orchestrator HTTP REST API. Some of these functions might not yet be available via the `maoctl.py`.
+
+- Register a new pipeline.
+```
+curl -X POST http://0.0.0.0:8080/pipeline/init  -H 'content-type: application/json' -d '{"name": "pipeline1","steps": [{"name": "acquisition","tool": "busybox","env": {"DEMO_TOOL_ENV": "foo.bar.env"},"cmd": ["sh","-c","sleep 10"],"docker_socket": false,"input_dataset": null,"output_dataset": "some-dataset"}]}'
+```
+
+- Run the pipeline. You can use crontab syntax to use the persistent scheduler (this can be omitted to run in ad-hoc mode).
 ```
 curl -X POST http://0.0.0.0:8080/pipeline/run  -H 'content-type: application/json' -d '{"name":"name-of-pipeline", "cron":"cron-string"}'
 ```
@@ -215,5 +216,5 @@ curl -X POST http://0.0.0.0:8080/pipeline/run  -H 'content-type: application/jso
 # Tool Compliance
 To create tools that can be deployed to the MAO Orchestrator they need to comply with the following guidelines:
 - Must be dockerized
-- Must be able to launch with no interaction (the possibility to pass command line arguments may be added in a future update)
 - Must put their generated data files in the `/usr/src/app/data` folder, as this is the folder mounted to the container.
+- Might read input data from the `/usr/src/app/input` folder if a previous pipeline step populated it.

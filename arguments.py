@@ -33,4 +33,19 @@ class Arguments:
         instance_install = instance_parsers.add_parser('install', help="Interactive MAO installer")
         instance_init = instance_parsers.add_parser('init', help="Initialize MAO instance (e.g. schedule tools)")
 
+        # Dataset commands
+        parser_dataset = subparsers.add_parser('dataset', help="Dataset related commands (e.g. get, add)")
+        pipeline_parsers = parser_dataset.add_subparsers(help="Dataset related commands", dest="dataset")
+        dataset_get = pipeline_parsers.add_parser('get', help="Get list of registered datasets")
+        dataset_get.add_argument('--name', help="Get details for dataset")
+        dataset_add = pipeline_parsers.add_parser('add', help="Register new dataset")
+        dataset_add.add_argument('name', help="Name of the dataset to register")
+        dataset_add.add_argument('git_url', help="SSH git URL of the dataset to register")
+
+        # Pipeline commands
+        parser_pipeline = subparsers.add_parser('pipeline', help="Pipeline related commands (e.g. get)")
+        pipeline_parsers = parser_pipeline.add_subparsers(help="Pipeline related commands", dest="pipeline")
+        pipeline_get = pipeline_parsers.add_parser('get', help="Get list of registered pipelines")
+        pipeline_get.add_argument('--name', help="Get details for single pipeline")
+
         self.args = parser.parse_args()

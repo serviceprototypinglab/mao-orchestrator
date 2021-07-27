@@ -69,6 +69,21 @@ def pipeline_list():
         _pipelines.append(_result_obj)
     return _pipelines
 
+def pipeline_get(name):
+    # read config from psql pipeline store
+    _query = select(
+            [psql_pipeline.c.steps]
+        ).where(
+            psql_pipeline.c.name == name
+        )
+    # only fetch one pipeline entry from psql as they have to be unique
+    steps = psql_con.execute(_query).fetchone()
+
+    if steps is not None:
+        steps = steps[0]
+
+    return steps
+
 def get_dataset(name):
     '''Returns dataset dict definition from federation etcd'''
     # get dataset from etcd
