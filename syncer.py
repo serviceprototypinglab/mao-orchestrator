@@ -176,23 +176,28 @@ def pipeline_init(name, steps):
 
     # verify pipeline definition
     _errors = {
-        'missing_tools': [],
-        'missing_datasets':  []
+        'missing_tools': set(),
+        'missing_datasets':  set()
     }
     _result = {'name': name, 'steps': steps, 'ok': True}
     for step in steps:
         _step_tools_ok, _tool = verify_pipeline_step_tools(step)
         if not _step_tools_ok:
-            _errors['missing_tools'].append(_tool)
+            _errors['missing_tools'].add(_tool)
         _step_datasets_ok, _datasets = verify_pipeline_step_datasets(step)
         if not _step_datasets_ok:
-            _errors['missing_datasets'].extend(_datasets)
+            _errors['missing_datasets'].add(_datasets)
 
     if len(_errors['missing_tools']) != 0 or \
         len(_errors['missing_datasets']) != 0:
+            # cast sets to list
+            _errors_cast = {
+                'missing_tools': list(_errors['missing_tools']),
+                'missing_datasets':  list(_errors['missing_datasets'])
+            }
             _result['ok'] = False
             _result['steps'] = []
-            _result['errors'] = _errors
+            _result['errors'] = _errors_cast
             return _result
 
     # initialize individual steps if pipeline def ok
