@@ -43,5 +43,23 @@
         "code_repo": "https://github.com/serviceprototypinglab/aws-sar-analysis",
         "artefact": "Lambda functions",
         "description": "Collect and assess several kinds of metadata around serverless functions."
+    },
+    {
+        "name": "cipolice-scanner",
+        "author": "Panos",
+        "image": "local/cipolice-scan:latest",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/serviceprototypinglab/cipolice",
+        "artefact": "Container Images",
+        "description": "Container Image Scanner."
+    },
+    {
+        "name": "dc-validator",
+        "author": "SPLab",
+        "image": "local/dcvalidator:latest",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/serviceprototypinglab/dcvalidator",
+        "artefact": "Docker-Compose files",
+        "description": "Validity checker for Docker-Compose files."
     }
 ]

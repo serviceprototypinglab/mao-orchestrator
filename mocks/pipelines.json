@@ -1,125 +1,7 @@
 [
     {
-        "name": "demo-pipeline-1-working-private",
-        "description": "Runs the Skan tool for demoing purposes",
-        "steps": [{
-                "name": "acquisition",
-                "tool": "busybox",
-                "env": {
-                    "DEMO_TOOL_ENV": "{{ MAO_PRIVATE_VARIABLE }}"
-                },
-                "cmd": [
-                    "sh",
-                    "-c",
-                    "wget https://github.com/argoproj/argo-cd/archive/refs/heads/master.zip && unzip master.zip -d /usr/src/app/data"
-                ],
-                "docker_socket": false,
-                "input_dataset": null,
-                "output_dataset": "mao-demo-dataset"
-            },
-            {
-                "name": "assessment",
-                "tool": "skan",
-                "env": {
-                    "DEMO_TOOL_ENV": "foo.bar.env"
-                },
-                "cmd": [
-                    "manifest",
-                    "-f",
-                    "/usr/src/app/input/argo-cd-master",
-                    "-o",
-                    "json",
-                    "--outputfile",
-                    "/usr/src/app/data/output_argo.json"
-                ],
-                "docker_socket": false,
-                "input_dataset": "mao-demo-dataset",
-                "output_dataset": "mao-demo2-dataset"
-            }
-        ]
-    },
-    {
-        "name": "broken-pipeline-1-tools-missing",
-        "description": "Runs the Skan tool for demoing purposes",
-        "steps": [{
-                "name": "acquisition",
-                "tool": "demo-pipeline-init",
-                "env": {
-                    "DEMO_TOOL_ENV": "test",
-                    "DEMO_TOOL_ENV_NON_PRIVATE": "foo.bar"
-                },
-                "cmd": [
-                    "sh",
-                    "-c",
-                    "wget https://github.com/argoproj/argo-cd/archive/refs/heads/master.zip && unzip master.zip -d /usr/src/app/data"
-                ],
-                "docker_socket": false,
-                "input_dataset": null,
-                "output_dataset": "mao-demo-dataset"
-            },
-            {
-                "name": "assessment",
-                "tool": "skan",
-                "env": {
-                    "DEMO_TOOL_ENV": "foo.bar.env"
-                },
-                "cmd": [
-                    "manifest",
-                    "-f",
-                    "/usr/src/app/input/argo-cd-master",
-                    "-o",
-                    "json",
-                    "--outputfile",
-                    "/usr/src/app/data/output_argo.json"
-                ],
-                "docker_socket": false,
-                "input_dataset": "mao-demo-dataset",
-                "output_dataset": "mao-demo2-dataset"
-            }
-        ]
-    },
-    {
-        "name": "marketplace-pipe-1",
-        "description": "Runs the marketplace-pipe-1 tool for demoing purposes",
-        "steps": [{
-                "name": "acquisition",
-                "tool": "demo-pipeline-init",
-                "env": {
-                    "DEMO_TOOL_ENV": "foo.bar.env"
-                },
-                "cmd": [
-                    "sh",
-                    "-c",
-                    "wget https://github.com/argoproj/argo-cd/archive/refs/heads/master.zip && unzip master.zip -d /usr/src/app/data"
-                ],
-                "docker_socket": false,
-                "input_dataset": null,
-                "output_dataset": "mao-demo-dataset"
-            },
-            {
-                "name": "assessment",
-                "tool": "skan",
-                "env": {
-                    "DEMO_TOOL_ENV": "foo.bar.env"
-                },
-                "cmd": [
-                    "manifest",
-                    "-f",
-                    "/usr/src/app/input/argo-cd-master",
-                    "-o",
-                    "json",
-                    "--outputfile",
-                    "/usr/src/app/data/output_argo.json"
-                ],
-                "docker_socket": false,
-                "input_dataset": "mao-demo-dataset",
-                "output_dataset": "mao-demo2-dataset"
-            }
-        ]
-    },
-    {
-        "name": "skan-demo",
-        "description": "Runs the sKan scanner on fetched k8s resources.",
+        "name": "skan-argocd-demo",
+        "description": "Runs the sKan scanner on fetched ArgoCD k8s resources.",
         "steps": [{
                 "name": "acquisition",
                 "tool": "busybox",
@@ -154,7 +36,7 @@
                 "cmd": [
                     "sh",
                     "-c",
-                    "mv /usr/src/app/input/output_skan.json /usr/src/app/data/output_skan_$(date +%Y-%m-%d).json && sleep 5"
+                    "mv /usr/src/app/input/output_skan.json /usr/src/app/data/output_skan_$(date +%Y-%m-%d).json && sleep 1"
                 ],
                 "docker_socket": false,
                 "input_dataset": "skan-asses-demo-dataset",
@@ -163,8 +45,8 @@
         ]
     },
     {
-        "name": "ArtifactHUB Collector",
-        "description": "Metadata collector for the ArtifactHUB repository.",
+        "name": "ArtifactHUB Collector with Helm download",
+        "description": "Metadata collector for the ArtifactHUB repository + download of Helm charts.",
         "steps": [{
                 "name": "data-acquisition",
                 "tool": "artifacthub_collector",
@@ -174,7 +56,24 @@
                 },
                 "docker_socket": false,
                 "input_dataset": null,
-                "output_dataset": "artifacthub-collector-dataset"
+                "output_dataset": "artifacthub-collector-helm-dataset",
+                "cmd": [
+                    "sh",
+                    "-c",
+                    "python main.py all"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "ArtifactHUB Collector packages only",
+        "description": "Metadata collector for the ArtifactHUB repository - packages only.",
+        "steps": [{
+                "name": "data-acquisition",
+                "tool": "artifacthub_collector",
+                "docker_socket": false,
+                "input_dataset": null,
+                "output_dataset": "artifacthub-collector-po-dataset"
             }
         ]
     },
@@ -199,6 +98,52 @@
                 "docker_socket": false,
                 "input_dataset": null,
                 "output_dataset": "aws-sar-dataset"
+            }
+        ]
+    },
+    {
+        "name": "CIPolice Scanner",
+        "description": "Scans the DockerHub library images with trivy.",
+        "steps": [{
+                "name": "execution",
+                "tool": "cipolice-scanner",
+                "docker_socket": true,
+                "input_dataset": null,
+                "output_dataset": "cipolice-dataset",
+                "env": {
+                    "CIPOLICE_TIMESTAMPED_OUTPUT": "True",
+                    "CIPOLICE_OUTPUT_PATH": "data"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Docker-Compose Validator Demo",
+        "description": "Validity check and quality metrics on docker-compose a demo compose file.",
+        "steps": [
+            {
+                "name": "acquirement",
+                "tool": "busybox",
+                "cmd": [
+                    "sh",
+                    "-c",
+                    "wget https://raw.githubusercontent.com/sameersbn/docker-gitlab/master/docker-compose.yml -O /usr/src/app/data/docker-compose.yml"
+                ],
+                "docker_socket": false,
+                "input_dataset": null,
+                "output_dataset": "dc-validator-input-dataset"
+            },
+            {
+                "name": "assessment",
+                "tool": "dc-validator",
+                "cmd": [
+                    "sh",
+                    "-c",
+                    "python ./validator-cli.py -f ./input/docker-compose.yml -fi 'Duplicate Keys,Top level property,Duplicate ports,Container name,Typing mistakes, DNS, Duplicate expose' -o ./data/result_$(date +%Y-%m-%d).json"
+                ],
+                "docker_socket": false,
+                "input_dataset": "dc-validator-input-dataset",
+                "output_dataset": "dc-validator-dataset"
             }
         ]
     }
