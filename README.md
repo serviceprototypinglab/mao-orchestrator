@@ -203,6 +203,8 @@ python maoctl.py dataset add <name> '<ssh-git-url>'
 
 The following list of copyable curl samples show the main functions of the orchestrator HTTP REST API. Some of these functions might not yet be available via the `maoctl.py`.
 
+> :warning: **The following list of API endpoints is incomplete**: This list mainly describes actions that are not yet implemented via the `maoctl.py`.
+
 ### Pipeline
 
 - Register a new pipeline - `/pipeline/init`
