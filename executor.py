@@ -3,6 +3,7 @@ import json
 import docker
 import json
 import subprocess
+from docker import errors
 
 
 DOCKER_SOCKET_PATH = '/var/run/docker.sock'
@@ -30,13 +31,17 @@ def pipeline_run(image, input_dir, output_dir, env, cmd, docker_socket):
     if input_dir is not None:
         _volumes[input_dir] = {'bind': '/usr/src/app/input'}
     # execute actual tool image with provided settings
-    docker_client.containers.run(image,
-                            volumes=_volumes,
-                            network='host',
-                            environment=env,
-                            command=cmd,
-                            auto_remove=True
-                            )
+    try: 
+        docker_client.containers.run(image,
+                                volumes=_volumes,
+                                network='host',
+                                environment=env,
+                                command=cmd,
+                                auto_remove=True
+                                )
+    except errors.ImageNotFound:
+        print(f"[Error] Container image {image} not found!")
+        return {"error": f"container image {image} not found!"}
     print("Done")
     print("Correcting ownership of pipeline step output ...")
     chown_output(OUTPUT_UID, output_dir)
