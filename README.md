@@ -203,14 +203,68 @@ python maoctl.py dataset add <name> '<ssh-git-url>'
 
 The following list of copyable curl samples show the main functions of the orchestrator HTTP REST API. Some of these functions might not yet be available via the `maoctl.py`.
 
-- Register a new pipeline.
+### Pipeline
+
+- Register a new pipeline - `/pipeline/init`
+  - JSON POST data reference:
+```
+{
+    "name": "Sample-Pipeline",  // name of the pipeline, must be unique
+    "description": "Sample description.",   // description of the pipelines purpose
+    "steps": [  // steps list, can contain multiple steps objects that are executed one after another
+        {
+            "name": "acquirement",  // name of the pipeline step
+            "tool": "busybox",  // tool to execute, reference to the actual registered on the federation
+            "cmd": [    // (can be null) command to execute inside the tool container, see also Dockerfile CMD reference: https://docs.docker.com/engine/reference/builder/#cmd
+                "sh",
+                "-c",
+                "wget https://example.com/foo.bar -O /usr/src/app/data/data.csv"
+            ],
+            "env": {    // (can be null) environment variables set for the tool execution
+                "SAMPLE_ENV": "foo.bar.env",
+                "API_KEY": "{{ MAO_PRIVATE_VARIABLE }}" // special value '{{ MAO_PRIVATE_VARIABLE }}' can be used for secrets, installer will ask for value interactively
+            }
+            "docker_socket": false, // boolean if Docker socket should be forwarded to the tool
+            "input_dataset": null,  // (can be null) input dataset that is mounted to /usr/src/app/input, references registered dataset on the federation
+            "output_dataset": "dc-validator-input-dataset" // output dataset that is mounted to /usr/src/app/data, references registered dataset on the federation
+        },
+        {
+            ...
+        }
+    ]
+}
+```
+  - Sample curl request:
 ```
 curl -X POST http://0.0.0.0:8080/pipeline/init  -H 'content-type: application/json' -d '{"name": "pipeline1","steps": [{"name": "acquisition","tool": "busybox","env": {"DEMO_TOOL_ENV": "foo.bar.env"},"cmd": ["sh","-c","sleep 10"],"docker_socket": false,"input_dataset": null,"output_dataset": "some-dataset"}]}'
 ```
 
-- Run the pipeline. You can use crontab syntax to use the persistent scheduler (this can be omitted to run in ad-hoc mode).
+- Run the pipeline - `/pipeline/run`
+  - You can use crontab syntax to use the persistent scheduler (this can be omitted to run in ad-hoc mode).
+  - JSON POST data reference:
+```
+{
+    "name": "name-of-pipeline", // name of the pipeline to run or schedule
+    "cron": "cron-string" // can be omitted to run ad-hoc
+}
+```
+  - Sample curl request:
 ```
 curl -X POST http://0.0.0.0:8080/pipeline/run  -H 'content-type: application/json' -d '{"name":"name-of-pipeline", "cron":"cron-string"}'
+```
+
+### Local-only dataset
+
+- Register a new local-only dataset - `/bare-repo/init`
+  - JSON POST data reference:
+```
+{
+    "name": "name-of-dataset", // name of the local-only dataset to create
+}
+```
+  - Sample curl request:
+```
+curl -X POST http://0.0.0.0:8080/bare-repo/init  -H 'content-type: application/json' -d '{"name":"name-of-dataset"}'
 ```
 
 # Tool Compliance
