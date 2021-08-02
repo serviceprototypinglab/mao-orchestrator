@@ -6,7 +6,7 @@ import api_client as MaoClient
 _URL = "https://mao-mao-research.github.io/hub/api"
 # local mock URL for development
 # use 'serve_local_marketplace.sh' in the /mocks directory to use local marketplace data
-# _URL = "http://127.0.0.1:8333/"
+#_URL = "http://127.0.0.1:8333/"
 _URL_TOOLS = "tools.json"
 _URL_FEDERATIONS = "federations.json"
 _URL_PIPELINES = "pipelines.json"

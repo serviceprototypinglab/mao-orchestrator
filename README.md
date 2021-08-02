@@ -188,32 +188,89 @@ python3 maoctl.py --help
 ```
 to begin.
 
-# New Pipeline
+The MAO command-line client offers a variety of help options to guide the user trough its functions. But some of the most common commands are listed below:
 
-The new pipeline is as yet NOT integrated with the client. Thus setting up and running a client must be done via direct HTTP requests for now.
-
-Example:
-
-- Register a tool as usual via the CLI:
+- Register a new tool via the CLI:
 ```
-python3 maoctl.py tool add ...
+python maoctl.py tool add <name> <author> <image> <data_repo> <code_repo> <artefact>
 ```
-- Register a new dataset, this uses a new endpoint:
+- Register a new dataset via the CLI:
 ```
-curl -X POST http://0.0.0.0:8080/registry/datasets  -H 'content-type: application/json' -d '{"name": "name-of-dataset", "body": {"master": "git-link", "nodes": []}}'
-```
-- Register a pipeline. This associates a tool with the dataset and creates a new branch with your username as the branch name.
-```
-curl -X POST http://0.0.0.0:8080/pipeline/init  -H 'content-type: application/json' -d '{"tool": "name-of-tool", "dataset":"name-of-dataset"}'
+python maoctl.py dataset add <name> '<ssh-git-url>'
 ```
 
-- Run the pipeline. You can use crontab syntax to use the persistent shceduler (this can be omitted to run in ad-hoc mode).
+# API Overview
+
+The following list of copyable curl samples show the main functions of the orchestrator HTTP REST API. Some of these functions might not yet be available via the `maoctl.py`.
+
+> :warning: **The following list of API endpoints is incomplete**: This list mainly describes actions that are not yet implemented via the `maoctl.py`.
+
+### Pipeline
+
+- Register a new pipeline - `/pipeline/init`
+  - JSON POST data reference:
+```
+{
+    "name": "Sample-Pipeline",  // name of the pipeline, must be unique
+    "description": "Sample description.",   // description of the pipelines purpose
+    "steps": [  // steps list, can contain multiple steps objects that are executed one after another
+        {
+            "name": "acquirement",  // name of the pipeline step
+            "tool": "busybox",  // tool to execute, reference to the actual registered on the federation
+            "cmd": [    // (can be null) command to execute inside the tool container, see also Dockerfile CMD reference: https://docs.docker.com/engine/reference/builder/#cmd
+                "sh",
+                "-c",
+                "wget https://example.com/foo.bar -O /usr/src/app/data/data.csv"
+            ],
+            "env": {    // (can be null) environment variables set for the tool execution
+                "SAMPLE_ENV": "foo.bar.env",
+                "API_KEY": "{{ MAO_PRIVATE_VARIABLE }}" // special value '{{ MAO_PRIVATE_VARIABLE }}' can be used for secrets, installer will ask for value interactively
+            }
+            "docker_socket": false, // boolean if Docker socket should be forwarded to the tool
+            "input_dataset": null,  // (can be null) input dataset that is mounted to /usr/src/app/input, references registered dataset on the federation
+            "output_dataset": "dc-validator-input-dataset" // output dataset that is mounted to /usr/src/app/data, references registered dataset on the federation
+        },
+        {
+            ...
+        }
+    ]
+}
+```
+  - Sample curl request:
+```
+curl -X POST http://0.0.0.0:8080/pipeline/init  -H 'content-type: application/json' -d '{"name": "pipeline1","steps": [{"name": "acquisition","tool": "busybox","env": {"DEMO_TOOL_ENV": "foo.bar.env"},"cmd": ["sh","-c","sleep 10"],"docker_socket": false,"input_dataset": null,"output_dataset": "some-dataset"}]}'
+```
+
+- Run the pipeline - `/pipeline/run`
+  - You can use crontab syntax to use the persistent scheduler (this can be omitted to run in ad-hoc mode).
+  - JSON POST data reference:
+```
+{
+    "name": "name-of-pipeline", // name of the pipeline to run or schedule
+    "cron": "cron-string" // can be omitted to run ad-hoc
+}
+```
+  - Sample curl request:
 ```
 curl -X POST http://0.0.0.0:8080/pipeline/run  -H 'content-type: application/json' -d '{"name":"name-of-pipeline", "cron":"cron-string"}'
+```
+
+### Local-only dataset
+
+- Register a new local-only dataset - `/bare-repo/init`
+  - JSON POST data reference:
+```
+{
+    "name": "name-of-dataset", // name of the local-only dataset to create
+}
+```
+  - Sample curl request:
+```
+curl -X POST http://0.0.0.0:8080/bare-repo/init  -H 'content-type: application/json' -d '{"name":"name-of-dataset"}'
 ```
 
 # Tool Compliance
 To create tools that can be deployed to the MAO Orchestrator they need to comply with the following guidelines:
 - Must be dockerized
-- Must be able to launch with no interaction (the possibility to pass command line arguments may be added in a future update)
 - Must put their generated data files in the `/usr/src/app/data` folder, as this is the folder mounted to the container.
+- Might read input data from the `/usr/src/app/input` folder if a previous pipeline step populated it.

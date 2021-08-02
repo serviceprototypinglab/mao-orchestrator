@@ -163,6 +163,8 @@ def pipeline_run(importdir, hostdir, steps):
 
         voting_mock(f"{importdir}/{step['output_dataset']['name']}", step['output_dataset'])
 
+        return r.json()
+
 def pipeline_cron(name, importdir, hostdir, steps, cron):
     job = scheduler.add_job(
         pipeline_run,

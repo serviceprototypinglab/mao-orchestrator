@@ -15,7 +15,11 @@ async def regtools(request):
 
 @routes.get('/registry/tools')
 async def regtools(request):
-    return web.json_response(etcd_client.list('tools'))
+    _tools = etcd_client.list('tools')
+    # remove '/tools/' prefix form etcd return values
+    for i, tool in enumerate(_tools):
+        _tools[i] = tool.replace("/tools/", "")
+    return web.json_response(_tools)
 
 
 @routes.get('/registry/tools/{tool}')
@@ -24,7 +28,11 @@ async def regtools(request):
 
 @routes.get('/registry/datasets')
 async def datasets(request):
-    return web.json_response(etcd_client.list('dataset'))
+    _datasets = etcd_client.list('dataset')
+    # remove '/dataset/' prefix form etcd return values
+    for i, dataset in enumerate(_datasets):
+        _datasets[i] = dataset.replace("/dataset/", "")
+    return web.json_response(_datasets)
 
 
 @routes.get('/registry/datasets/{dataset}')
@@ -71,11 +79,10 @@ async def register(request):
 # Get pipeline from MAO registry
 @routes.get('/registry/pipelines/{pipeline}')
 async def write(request):
-    try:
-        _result = syncer.registry_pipeline_get(request.match_info['pipeline'])
-        return web.json_response(json.loads(_result))
-    except etcd.EtcdKeyNotFound:
+    _result = syncer.pipeline_get(request.match_info['pipeline'])
+    if _result is None:
         return web.json_response({"error": "Pipeline not found in registry"}, status=404)
+    return web.json_response(_result)
 
 # Register dataset with new schema
 @routes.post('/registry/datasets')

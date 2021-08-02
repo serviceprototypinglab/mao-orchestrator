@@ -1,32 +1,5 @@
 [
     {
-        "name": "Panos Linter",
-        "author": "Panos",
-        "image": "panos/linter",
-        "data_repo": "https://github.com/foo/bar",
-        "code_repo": "https://github.com/foo/bardata",
-        "artefact": "source_code",
-        "description": "A Linting Tool"
-    },
-    {
-        "name": "Daniel Sec Scanner",
-        "author": "Daniel",
-        "image": "daniel/security-scanner",
-        "data_repo": "https://github.com/foo/bar",
-        "code_repo": "https://github.com/foo/bardata",
-        "artefact": "docker_images",
-        "description": "A Docker image security scanner"
-    },
-    {
-        "name": "demo-pipeline-init",
-        "author": "Daniel",
-        "image": "daniel/security-scanner",
-        "data_repo": "https://github.com/foo/bar",
-        "code_repo": "https://github.com/foo/bardata",
-        "artefact": "docker_images",
-        "description": "A Docker image security scanner"
-    },
-    {
         "name": "skan",
         "author": "Gadi Naor",
         "image": "alcide/skan",
@@ -43,5 +16,50 @@
         "code_repo": "https://git.busybox.net/busybox/",
         "artefact": "multiple",
         "description": "The Swiss Army Knife of Embedded Linux"
+    },
+    {
+        "name": "artifacthub_collector",
+        "author": "Panos",
+        "image": "local/artifacthub_collector:latest",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/EcePanos/artifacthub_collector",
+        "artefact": "Kubernetes packages",
+        "description": "Metadata collector for the ArtifactHUB repository."
+    },
+    {
+        "name": "dockerhub_collector",
+        "author": "Panos",
+        "image": "local/dockerhub-collector:latest",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/EcePanos/Dockerhub-Collector",
+        "artefact": "Container Images",
+        "description": "Metadata collector for DockerHub."
+    },
+    {
+        "name": "aws-sar-analyser",
+        "author": "Josef",
+        "image": "local/aws-sar-analysis:latest",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/serviceprototypinglab/aws-sar-analysis",
+        "artefact": "Lambda functions",
+        "description": "Collect and assess several kinds of metadata around serverless functions."
+    },
+    {
+        "name": "cipolice-scanner",
+        "author": "Panos",
+        "image": "local/cipolice-scan:latest",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/serviceprototypinglab/cipolice",
+        "artefact": "Container Images",
+        "description": "Container Image Scanner."
+    },
+    {
+        "name": "dc-validator",
+        "author": "SPLab",
+        "image": "local/dcvalidator:latest",
+        "data_repo": "https://github.com/foo/bar",
+        "code_repo": "https://github.com/serviceprototypinglab/dcvalidator",
+        "artefact": "Docker-Compose files",
+        "description": "Validity checker for Docker-Compose files."
     }
 ]
