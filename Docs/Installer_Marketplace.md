@@ -6,7 +6,7 @@ The discovery mechanism for federations, pipelines and tools is baked by the MAO
 
 ## MAO Marketplace
 
-The first version of the marketplace consists of the plain JSON files that are update by the MAO core team.
+The first version of the marketplace consists of the plain JSON files that are updated by the MAO core team.
 
 The base URL for the marketplace is `https://mao-mao-research.github.io/hub/api/<component>.json` followed by a specific component JSON file:
 
