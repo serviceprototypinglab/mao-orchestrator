@@ -14,5 +14,12 @@
             "operator2@example.com"
         ],
         "description": "A collection of artifact analysis tools."
+    },
+    {
+        "name": "System Performance Engineers",
+        "contacts": [
+            "spio@zhaw.ch"
+        ],
+        "description": "Global observation of local code execution performance."
     }
 ]

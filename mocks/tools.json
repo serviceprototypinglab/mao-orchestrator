@@ -1,5 +1,14 @@
 [
     {
+        "name": "performancetool",
+        "author": "Panos",
+        "image": "panosece/pybench",
+        "data_repo": "https://gitlab.cloudlab.zhaw.ch/observatory/systemperformance",
+        "code_repo": "...",
+        "artefact": "system",
+        "description": "A small and short-running benchmark, executing some Python statements."
+    },
+    {
         "name": "skan",
         "author": "Gadi Naor",
         "image": "alcide/skan",

@@ -1,5 +1,18 @@
 [
     {
+        "name": "system-performance",
+        "description": "Runs local code execution performance measurement.",
+        "steps": [{
+                "name": "acquisition",
+                "tool": "performancetool",
+                "env": {},
+                "cmd": [],
+                "docker_socket": false,
+                "input_dataset": null,
+                "output_dataset": "system-performance-dataset"
+            }]
+    },
+    {
         "name": "skan-argocd-demo",
         "description": "Runs the sKan scanner on fetched ArgoCD k8s resources.",
         "steps": [{
