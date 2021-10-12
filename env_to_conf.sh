@@ -15,8 +15,9 @@ echo "[WORKING_ENVIRONMENT]\n"\
 "host = $dbhost\n\n"\
 "[DATA_REPOS]" > config.ini
 
-until PGPASSWORD=$password psql -h "$dbhost" -U "$dbuser" -d "$db" -c '\q'; do
-  >&2 echo "Postgres is unavailable - sleeping"
+until pg_isready -h "$dbhost" -U "$dbuser" -d "$db"
+do
+  echo "Postgres is unavailable - sleeping"
   sleep 1
 done
 
