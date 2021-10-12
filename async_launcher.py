@@ -24,7 +24,11 @@ async def regtools(request):
 
 @routes.get('/registry/tools/{tool}')
 async def regtools(request):
-    return web.json_response(etcd_client.get('tools/' + request.match_info['tool']))
+    try: 
+        t = etcd_client.get('tools/' + request.match_info['tool'])
+        return web.json_response(t)
+    except Exception:
+        raise web.HTTPNotFound(reason="Tool not found")
 
 @routes.get('/registry/datasets')
 async def datasets(request):
