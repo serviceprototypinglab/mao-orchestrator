@@ -1,6 +1,7 @@
 import requests
 from marshmallow import fields
-import marshmallow_objects as marshmallow
+from marshmallow.schema import Schema
+
 import api_client as MaoClient
 
 _URL = "https://mao-mao-research.github.io/hub/api"
@@ -14,7 +15,7 @@ _URL_PIPELINES = "pipelines.json"
 class MarketplaceNotReachable(Exception):
     pass
 
-class Federation(marshmallow.Model):
+class Federation(Schema):
     name = fields.Str(required=True)
     description = fields.Str(required=True)
     contacts = fields.List(fields.Email(), required=True)
