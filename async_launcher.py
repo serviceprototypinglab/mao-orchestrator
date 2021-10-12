@@ -40,8 +40,12 @@ async def datasets(request):
 
 
 @routes.get('/registry/datasets/{dataset}')
-async def datasets(request):
-    return web.json_response(etcd_client.get(f"dataset/{request.match_info['dataset']}"))
+async def datasets(request: web.Request):
+    try:
+        d = etcd_client.get(f"dataset/{request.match_info['dataset']}")
+        return web.json_response(d)
+    except Exception:
+        raise web.HTTPNotFound(reason="Dataset not found")
 
 
 @routes.get('/jobs')
