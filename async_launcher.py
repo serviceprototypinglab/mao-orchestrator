@@ -1,9 +1,9 @@
-from aiohttp import web
-import etcd
-import syncer
-import etcd_client
 import json
-import schedule
+
+from aiohttp import web
+
+import etcd_client
+import syncer
 
 app = web.Application()
 routes = web.RouteTableDef()
@@ -137,7 +137,7 @@ async def register(request):
 
 @routes.delete('/registry/datasets/{dataset}')
 async def register(request):
-    return web.json_response(etcd_client.delete(f"dataset/{request.match_info['dataset']}/{request.match_info['node']}"))
+    return web.json_response(etcd_client.delete(f"dataset/{request.match_info['dataset']}"))
 
 
 @routes.delete('/jobs/{id}')
