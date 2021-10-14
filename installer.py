@@ -1,20 +1,21 @@
-import yaml
-import secrets
-import string
-import os
-import requests
-import numpy as np
-import socket
-import ipaddress
 import getpass
-
-from apscheduler.triggers.cron import CronTrigger
-from typing import List
+import ipaddress
+import os
+import secrets
+import socket
+import string
 from pathlib import Path
 from shutil import which
+from typing import List
+
+import numpy as np
+import requests
+import yaml
+from apscheduler.triggers.cron import CronTrigger
 
 import api_client as MaoClient
 import marketplace as MaoMarketplace
+
 
 class Installer:
 
@@ -53,7 +54,9 @@ class Installer:
                     self.marketplace_fed_cli()
                 elif _selected_option == 1:
                     # ask user for etcd details
-                    self.etcd_operator_input = input("\nEnter the operator provided etcd config: ")
+                    self.etcd_operator_input = input(
+                        "\nPaste in the ETCD_INITIAL_CLUSTER environmental variable from your federation: "
+                    )
                     self.etcd_cluster_state = "existing"
             print("") # insert blank line
             
