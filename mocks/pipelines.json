@@ -2,7 +2,8 @@
     {
         "name": "system-performance",
         "description": "Runs local code execution performance measurement.",
-        "steps": [{
+        "steps": [
+            {
                 "name": "acquisition",
                 "tool": "performancetool",
                 "env": {},
@@ -10,12 +11,14 @@
                 "docker_socket": false,
                 "input_dataset": null,
                 "output_dataset": "system-performance-dataset"
-            }]
+            }
+        ]
     },
     {
         "name": "skan-argocd-demo",
         "description": "Runs the sKan scanner on fetched ArgoCD k8s resources.",
-        "steps": [{
+        "steps": [
+            {
                 "name": "acquisition",
                 "tool": "busybox",
                 "cmd": [
@@ -23,6 +26,7 @@
                     "-c",
                     "rm -rf /usr/src/app/data/argo-cd-master && wget https://github.com/argoproj/argo-cd/archive/refs/heads/master.zip && unzip master.zip -d /usr/src/app/data"
                 ],
+                "env": {},
                 "docker_socket": false,
                 "input_dataset": null,
                 "output_dataset": "skan-acq-demo-dataset"
@@ -39,6 +43,7 @@
                     "--outputfile",
                     "/usr/src/app/data/output_skan.json"
                 ],
+                "env": {},
                 "docker_socket": false,
                 "input_dataset": "skan-acq-demo-dataset",
                 "output_dataset": "skan-asses-demo-dataset"
@@ -51,6 +56,7 @@
                     "-c",
                     "mv /usr/src/app/input/output_skan.json /usr/src/app/data/output_skan_$(date +%Y-%m-%d).json && sleep 1"
                 ],
+                "env": {},
                 "docker_socket": false,
                 "input_dataset": "skan-asses-demo-dataset",
                 "output_dataset": "skan-result-demo-dataset"
@@ -60,7 +66,8 @@
     {
         "name": "ArtifactHUB Collector with Helm download",
         "description": "Metadata collector for the ArtifactHUB repository + download of Helm charts.",
-        "steps": [{
+        "steps": [
+            {
                 "name": "data-acquisition",
                 "tool": "artifacthub_collector",
                 "env": {
@@ -81,9 +88,12 @@
     {
         "name": "ArtifactHUB Collector packages only",
         "description": "Metadata collector for the ArtifactHUB repository - packages only.",
-        "steps": [{
+        "steps": [
+            {
                 "name": "data-acquisition",
                 "tool": "artifacthub_collector",
+                "env": {},
+                "cmd": [],
                 "docker_socket": false,
                 "input_dataset": null,
                 "output_dataset": "artifacthub-collector-po-dataset"
@@ -93,9 +103,12 @@
     {
         "name": "DockerHub Collector",
         "description": "Metadata collector for DockerHub.",
-        "steps": [{
+        "steps": [
+            {
                 "name": "data-acquisition",
                 "tool": "dockerhub_collector",
+                "env": {},
+                "cmd": [],
                 "docker_socket": false,
                 "input_dataset": null,
                 "output_dataset": "dockerhub-collector-dataset"
@@ -105,9 +118,12 @@
     {
         "name": "AWS SAR Analysis",
         "description": "Collect and assess several kinds of metadata around serverless functions.",
-        "steps": [{
+        "steps": [
+            {
                 "name": "execution",
                 "tool": "aws-sar-analyser",
+                "env": {},
+                "cmd": [],
                 "docker_socket": false,
                 "input_dataset": null,
                 "output_dataset": "aws-sar-dataset"
@@ -117,12 +133,14 @@
     {
         "name": "CIPolice Scanner",
         "description": "Scans the DockerHub library images with trivy.",
-        "steps": [{
+        "steps": [
+            {
                 "name": "execution",
                 "tool": "cipolice-scanner",
                 "docker_socket": true,
                 "input_dataset": null,
                 "output_dataset": "cipolice-dataset",
+                "cmd": [],
                 "env": {
                     "CIPOLICE_TIMESTAMPED_OUTPUT": "True",
                     "CIPOLICE_OUTPUT_PATH": "data"
@@ -142,6 +160,7 @@
                     "-c",
                     "wget https://raw.githubusercontent.com/sameersbn/docker-gitlab/master/docker-compose.yml -O /usr/src/app/data/docker-compose.yml"
                 ],
+                "env": {},
                 "docker_socket": false,
                 "input_dataset": null,
                 "output_dataset": "dc-validator-input-dataset"
@@ -154,6 +173,7 @@
                     "-c",
                     "python ./validator-cli.py -f ./input/docker-compose.yml -fi 'Duplicate Keys,Top level property,Duplicate ports,Container name,Typing mistakes, DNS, Duplicate expose' -o ./data/result_$(date +%Y-%m-%d).json"
                 ],
+                "env": {},
                 "docker_socket": false,
                 "input_dataset": "dc-validator-input-dataset",
                 "output_dataset": "dc-validator-dataset"
