@@ -70,6 +70,22 @@ def add_dataset(name, url):
     print(r.json())
 
 
+def add_repo(name: Optional[str] = None):
+    if not name or name.strip() == "":
+        print("Please provide a tool name")
+        return None
+
+    req = dict()
+    req["name"] = name
+
+    r = requests.post(f"{_URL}/bare-repo/init", json=req)
+    if r.ok:
+        print("Successfully initialized a local repo")
+    else:
+        print("Repo initialization failed")
+    print(r.json())
+
+
 def remove_tool(name: Optional[str] = None):
     if not name or name.strip() == "":
         print("Please provide a tool name")
@@ -231,3 +247,6 @@ if __name__ == "__main__":
             add_pipeline()
         elif args.pipeline == "run":
             run_pipeline(args.name)
+    elif args.command == "repo":
+        if args.repo == "add":
+            add_repo(args.name)

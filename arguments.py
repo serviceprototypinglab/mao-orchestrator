@@ -12,6 +12,7 @@ class Arguments:
         self.__init__instance_parser()
         self.__init__dataset_parser()
         self.__init__pipeline_parser()
+        self.__init__repo_parser()
 
     def __init__tool_parser(self) -> None:
         tool_parser: ArgumentParser = self.__subparsers.add_parser("tool", help="List, register or run tools")
@@ -81,6 +82,16 @@ class Arguments:
         pipeline_run.add_argument("--name", help="The identifier of the pipeline to run")
         # TODO(fix)
         # pipeline_run.add_argument("--cron", help="A cron expression to schedule the pipeline")
+
+    def __init__repo_parser(self) -> None:
+        repo_parser: ArgumentParser = self.__subparsers.add_parser(
+            "repo", help="Repository related commands (e.g. add)"
+        )
+        repo_subparser: _SubParsersAction = repo_parser.add_subparsers(
+            help="Repository related commands", dest="repo"
+        )
+        repo_add: ArgumentParser = repo_subparser.add_parser("add", help="Initialize a new local repository")
+        repo_add.add_argument("--name", help="The name of the dataset to be created")
 
     def parse_args(self) -> Namespace:
         return self.__parser.parse_args()
