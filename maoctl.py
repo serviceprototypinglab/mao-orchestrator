@@ -124,7 +124,7 @@ def __build_pipeline_step() -> dict:
     step["output_dataset"] = promt_for_non_empty_str("Please enter the tool output_dataset.\nTool output_dataset: ")
     step["docker_socket"] = yes_no_promt("Does the tool require a docker socket?")
     # TODO: update these with relevant data.
-    step["cmd"] = {}
+    step["cmd"] = []
     step["env"] = {}
     return step
 
