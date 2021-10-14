@@ -14,7 +14,7 @@ You can request a list of datasets, or information on a single dataset.
 python maoctl.py dataset get
 ```
 ```
-python maoctl.py dataset get <name>
+python maoctl.py dataset get --name NAME
 ```
 
 ## Register a dataset
@@ -23,7 +23,7 @@ Registering a dataset creates a new entry in etcd, letting all cluster members k
 ### CLI
 
 ```
-python maoctl.py dataset add <name> <url>
+python maoctl.py dataset add --name NAME --git_url URL
 ```
 
 ## Un-register a dataset
@@ -32,18 +32,21 @@ Unregistering a dataset will remove it from etcd.
 ### CLI
 
 ```
-python maoctl.py dataset remove <name>
+python maoctl.py dataset remove --name NAME
 ```
 
 ## List local datasets
+*currently unsupported*
 
 List the datasets that have been cloned to the local filesystem.
+
 ### CLI
 
 ```
 python maoctl.py dataset list-local
 ```
 ## Clone a registered dataset
+*currently unsupported*
 
 This will clone the specified dataset to the import directory set in the configuration file.
 
@@ -52,6 +55,7 @@ This will clone the specified dataset to the import directory set in the configu
 python maoctl.py dataset clone <name>
 ```
 ## Delete a cloned dataset
+*currently unsupported*
 
 Delete a cloned dataset from the local filesystem.
 ### CLI

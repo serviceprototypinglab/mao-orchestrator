@@ -13,11 +13,13 @@ The following CLI instructions perform these functionalities.
 A registry entry for a tool is a key/value pair where the name of the tool is the key and the value is a JSON string with the following properties:
 ```
 {
+  "name": "valid_identifier",
   "author": "Panos",
   "image": "panos/testtool",
   "data_repo": "https://github.com/foo/bar",
   "code_repo": "https://github.com/foo/bardata",
-  "artefact": "docker_images"
+  "artefact": "docker_images",
+  "description": "An example tool entry"
 }
 ```
 The `image` and `data_repo` attributes are necessary to execute an image properly.
@@ -35,7 +37,7 @@ You can list the available tools or get information on a specific tool.
 python maoctl.py tool get
 ```
 ```
-python maoctl.py tool get <name>
+python maoctl.py tool get --name NAME
 ```
 
 ### Adding a tool to the registry
@@ -43,14 +45,20 @@ python maoctl.py tool get <name>
 Register a tool to the registry. Ensure the tool `image` can be pulled by any user and that the `data_repo` can be cloned and pulled from by any user.
 #### CLI
 ```
-python maoctl.py tool add <name> <author> <image> <data_repo> <code_repo> <artefact> `
+python maoctl.py tool add 
+ --name NAME \ 
+ --author AUTHOR \ 
+ --image IMAGE \ 
+ --data_repo DATA_REPO \ 
+ --code_repo CODE_REPO \ 
+ --artefact ARTEFACT
 ```
 ### Removing a tool from the registry
 
 Removes the specified tool from the registry.
 #### CLI
 ```
-python maoctl.py tool remove <name>
+python maoctl.py tool remove --name NAME
 ```
 ## Managing jobs
 
@@ -66,6 +74,8 @@ List the currently scheduled jobs. This will also display information on the lis
 python maoctl.py tool list-scheduled
 ```
 ### Run a tool immediately
+*currently unsupported*
+
 Run a tool right away and display a short summary. For the summary to work the tool must be compliant with the spike detector.
 #### CLI
 ```
@@ -91,6 +101,8 @@ Gain:0.0%
 No data anomalies detected
 ```
 ### Schedule a tool
+*currently unsupported*
+
 Schedule the tool to run periodically. Daily and weekly execution is supported.
 #### CLI
 ```
@@ -100,10 +112,12 @@ python maoctl.py tool schedule <name> {daily,weekly}
 A scheduled tool can also be un-scheduled.
 #### CLI
 ```
-python maoctl.py tool stop <name>
+python maoctl.py tool stop --id ID
 ```
 ## Advanced
 ### Custom Docker parameters
-You can specify a command to run inside the tool container and a set of environment variables by setting the optional `command` (list) and `env` (dict) parameters respectively in the run/schedule request. This is possible **only** via the API.
+You can specify a command to run inside the tool container and a set of environment variables by setting the optional `command` (list) and `env` (dict) parameters respectively in the run/schedule request. This is possible **only** via the API. The CLI currently leaves these parametars empty
 ### Crontab syntax for scheduler
+*set as NULL for now as it breaks*
+
 You can use crontab syntax for the frequency parameter of the scheduler request. This is possible both through the CLI and API.
