@@ -91,7 +91,7 @@ class Arguments:
             help="Repository related commands", dest="repo"
         )
         repo_add: ArgumentParser = repo_subparser.add_parser("add", help="Initialize a new local repository")
-        repo_add.add_argument("--name", help="The name of the dataset to be created")
+        repo_add.add_argument("--name", help="The name of the repository to be created")
 
     def parse_args(self) -> Namespace:
         return self.__parser.parse_args()

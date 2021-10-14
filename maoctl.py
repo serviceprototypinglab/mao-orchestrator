@@ -72,7 +72,7 @@ def add_dataset(name, url):
 
 def add_repo(name: Optional[str] = None):
     if not name or name.strip() == "":
-        print("Please provide a tool name")
+        print("Please provide a repository name")
         return None
 
     req = dict()
@@ -193,7 +193,7 @@ def add_pipeline():
 
 def run_pipeline(name: Optional[str] = None):
     if not name or name.strip() == "":
-        print("Please provide a tool name")
+        print("Please provide a pipeline name")
         return None
     req = dict()
     req["name"] = name
