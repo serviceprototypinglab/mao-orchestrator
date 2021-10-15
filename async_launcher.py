@@ -1,9 +1,9 @@
-from aiohttp import web
-import etcd
-import syncer
-import etcd_client
 import json
-import schedule
+
+from aiohttp import web
+
+import etcd_client
+import syncer
 
 app = web.Application()
 routes = web.RouteTableDef()
@@ -24,7 +24,11 @@ async def regtools(request):
 
 @routes.get('/registry/tools/{tool}')
 async def regtools(request):
-    return web.json_response(etcd_client.get('tools/' + request.match_info['tool']))
+    try: 
+        t = etcd_client.get('tools/' + request.match_info['tool'])
+        return web.json_response(t)
+    except Exception:
+        raise web.HTTPNotFound(reason="Tool not found")
 
 @routes.get('/registry/datasets')
 async def datasets(request):
@@ -36,8 +40,12 @@ async def datasets(request):
 
 
 @routes.get('/registry/datasets/{dataset}')
-async def datasets(request):
-    return web.json_response(etcd_client.get(f"dataset/{request.match_info['dataset']}"))
+async def datasets(request: web.Request):
+    try:
+        d = etcd_client.get(f"dataset/{request.match_info['dataset']}")
+        return web.json_response(d)
+    except Exception:
+        raise web.HTTPNotFound(reason="Dataset not found")
 
 
 @routes.get('/jobs')
@@ -129,7 +137,7 @@ async def register(request):
 
 @routes.delete('/registry/datasets/{dataset}')
 async def register(request):
-    return web.json_response(etcd_client.delete(f"dataset/{request.match_info['dataset']}/{request.match_info['node']}"))
+    return web.json_response(etcd_client.delete(f"dataset/{request.match_info['dataset']}"))
 
 
 @routes.delete('/jobs/{id}')

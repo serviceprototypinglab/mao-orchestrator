@@ -1,12 +1,13 @@
-import etcd
 import configparser
 import logging
 
-#logging.basicConfig(level=logging.DEBUG)
+import etcd
+
+# logging.basicConfig(level=logging.DEBUG)
 config = configparser.ConfigParser()
-config.read('config.ini')
-etcd_host = config['ETCD']['HOST']
-etcd_port = int(config['ETCD']['PORT'])
+config.read("config.ini")
+etcd_host = config["ETCD"]["HOST"]
+etcd_port = int(config["ETCD"]["PORT"])
 client = etcd.Client(host=etcd_host, port=etcd_port)
 
 
@@ -22,9 +23,8 @@ def write(key, value, ephemeral=False):
 def list(key):
     qresult = []
     try:
-        directory = client.get(key)
-
-        for result in directory.children:
+        directory: etcd.EtcdResult = client.get(key)
+        for result in directory.leaves:
             qresult.append(result.key)
     except etcd.EtcdKeyNotFound:
         return qresult
@@ -61,8 +61,8 @@ def directory(key):
 def lock(id):
     lock = etcd.Lock(client, id)
     lock.acquire(
-        blocking=True, # will block until the lock is acquired
-        lock_ttl=None, # lock will live until we release it
-        timeout=300    # timeout for lock acquirement
-        )
+        blocking=True,  # will block until the lock is acquired
+        lock_ttl=None,  # lock will live until we release it
+        timeout=300,  # timeout for lock acquirement
+    )
     return lock

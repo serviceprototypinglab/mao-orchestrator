@@ -1,8 +1,7 @@
 import collections
 import requests
 import json
-from marshmallow import fields, EXCLUDE
-import marshmallow_objects as marshmallow
+from marshmallow import fields, EXCLUDE, Schema
 from requests.exceptions import HTTPError
 
 _URL = "http://127.0.0.1:8080"
@@ -18,7 +17,7 @@ def _remove_prefix(path):
         _last_index = len(_result)-1
         return _result[_last_index]
 
-class PipelineStep(marshmallow.Model):
+class PipelineStep(Schema):
     name = fields.Str(required=True)
     tool = fields.Str(required=True)
     input_dataset = fields.Str(required=True, allow_none=True)
@@ -28,12 +27,12 @@ class PipelineStep(marshmallow.Model):
     docker_socket = fields.Bool(default=False)
     cron = fields.Str(load_only=True)
 
-class Pipeline(marshmallow.Model):
+class Pipeline(Schema):
 
     PRIVATE_VARIABLE_PLACEHOLDER = "{{ MAO_PRIVATE_VARIABLE }}"
 
     name = fields.Str(required=True)
-    steps = fields.List(marshmallow.NestedModel(PipelineStep))
+    steps = fields.List(fields.Nested(PipelineStep))
     instance_scheduled = fields.Bool(missing=False, load_only=True)
     federation_registered = fields.Bool(missing=False, load_only=True)
 
@@ -123,7 +122,7 @@ class Pipeline(marshmallow.Model):
             pipelines.append(_tmp_pipe)
         return pipelines
 
-class Tool(marshmallow.Model):
+class Tool(Schema):
     name = fields.Str(required=True)
     image = fields.Str(required=True)
     author = fields.Str()
@@ -182,7 +181,7 @@ class Tool(marshmallow.Model):
         except HTTPError as e:
             print(e)
 
-class Dataset(marshmallow.Model):
+class Dataset(Schema):
     name = fields.Str(required=True)
     master = fields.Str(required=True)
     nodes = fields.List(fields.Str(), required=True)
@@ -239,7 +238,7 @@ class Dataset(marshmallow.Model):
         except HTTPError as e:
             print(e)
 
-class BareRepo(marshmallow.Model):
+class BareRepo(Schema):
     name = fields.Str(required=True)
     path = fields.Str(dump_only=True)
 

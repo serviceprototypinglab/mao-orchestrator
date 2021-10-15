@@ -27,11 +27,19 @@ python maoctl.py pipeline get
 
 Get detailed information about a single pipeline:
 ```
-python maoctl.py pipeline get --name <name>
+python maoctl.py pipeline get --name NAME
 ```
 
 ### Registering new pipelines
 
-The registration of a new pipeline can be conveniently be done via the MAO installer or via the API. A CLI for registering new pipelines is currently not available.
+The registration of a new pipeline can be conveniently be done via the MAO installer, via the API or through the CLI.
+
+#### CLI
+
+Enter the promt for creating a new pipeline
+```
+python maoctl.py pipeline add
+```
+The CLI will follow through several steps where you can provide the necessary information regarding the pipeline
 
 Details about the pipeline registration can be found in the projects main README which can be found [here](../README.md).
