@@ -2,7 +2,7 @@ aiohttp==3.7.4.post0
 APScheduler==3.6.1
 async-timeout==3.0.1
 attrs==21.2.0
-certifi==2021.10.8
+certifi==2022.12.7
 chardet==4.0.0
 charset-normalizer==2.0.7
 dnspython==2.1.0
